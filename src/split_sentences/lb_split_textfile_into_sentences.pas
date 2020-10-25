@@ -33,61 +33,31 @@ implementation
 
 uses LazUtf8;
 
-const
-  RussianLowerCase : array of string =
-    ('а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й',
-     'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф',
-     'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я');
-  RussianUpperCase : array of string =
-    ('А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й',
-     'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф',
-     'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я');
-
-// Classifies a string (of one UTF character) as
+// Classifies a code point (of one UTF character) as
 // Uppercase (1), Lowercase (2) or else (3)
-function Classify(const s : string; resultIfNumber : integer) : integer;
-var i : integer;
+function Classify(const codePoint : string; resultIfNumber : integer) : integer;
+var lower, upper : string;
 begin
   result := 3;
 
-  // Most common cases: spaces, ...
-  if s = ' ' then exit;
+  // Spaces are most common in calling this function, return immediately
+  if codePoint = ' ' then exit;
 
-  if length(s) = 1 then
+  if (length(codePoint) = 1) and (codePoint[1] >= '0') and (codePoint[1] <= '9') then
   begin
-   // 1 byte. Assume ASCII (Western) and check.
-   if (s[1] >= 'A') and (s[1] <= 'Z') then
-   begin
-     result := 1;
-     exit;
-   end;
-   if (s[1] >= 'a') and (s[1] <= 'z') then
-   begin
-     result := 2;
-     exit;
-   end;
-   if (s[1] >= '0') and (s[1] <= '9') then
-   begin
-     result := resultIfNumber;
-     exit;
-   end;
+    result := resultIfNumber;
+    exit;
   end;
 
-  // Check Russian sentences
-  result := 0;
-  assert(length(RussianLowerCase) = length(RussianUpperCase));
-  for i := low(RussianUpperCase) to high(RussianUpperCase) do
+  // Check UTF8 multi byte character
+  lower := UTF8LowerString(codePoint);
+  upper := UTF8UpperString(codePoint);
+
+  if lower <> upper then
   begin
-    if RussianUpperCase[i] = s then
-    begin
-      result := 1;
-      exit;
-    end;
-    if RussianLowerCase[i] = s then
-    begin
-       result := 2;
-       exit;
-    end;
+    // It is a character
+    if codePoint = upper then result := 1
+    else if codePoint = lower then result := 2;
   end;
 end;
 
@@ -155,10 +125,48 @@ begin
   end;
 end;
 
-function CleanString(const t : string) : string;
-var s : string;
+// Returns true if the sentence is a roman numeral
+function IsRomanNumeral(const s : string) : boolean;
+
+  function IsNumeral(c : char) : boolean;
+  const numerals : array of char = ('I', 'V', 'X', 'L', 'C', 'D', 'M');
+  var i : integer;
+  begin
+    result := false;
+    for i := low(numerals) to high(numerals) do
+    begin
+      if c = numerals[i] then begin result := true; exit; end;
+    end;
+  end;
+
+var i : integer;
 begin
-  s := t;
+  result := false;
+  if length(s) = 0 then exit;
+
+  // It's not necessary here to walk through UTF codepoints, if it's e.g. Russian it will
+  // return false immediately.
+  for i := 1 to length(s) do
+  begin
+    if not IsNumeral(s[i]) then exit;
+  end;
+  result := true;
+end;
+
+
+function CleanString(list : TStringList) : string;
+var s, item : string;
+  k : integer;
+begin
+  // Adapt all lines with only a Roman numeral, because this is usually a chapter.
+  // Make it a sentence and denote it as special by a #
+  for k := 0 to list.Count - 1 do
+  begin
+    item := trim(list[k]);
+    if IsRomanNumeral(item) then list[k] := '# ' + item + '.';
+  end;
+
+  s := list.text;
 
   // Change line breaks and form feeds into spaces
   s := StringReplace(s, #10, ' ' , [rfReplaceAll]);
@@ -178,37 +186,8 @@ begin
   result := s;
 end;
 
-function IsRoman(const s : string) : boolean;
-var i : integer;
-begin
-  // TODO: this can go wrong with an English sentence
-  // starting e.g. with "I will"
-  result := false;
-  for i := 1 to length(s) do
-  begin
-    if (s[i] <> 'I')
-    and (s[i] <> 'V')
-    and (s[i] <> 'X')
-    then
-    begin
-      exit;
-    end;
-  end;
-  result := true;
-end;
-
 procedure AppendCleanOutput(list : TStringList; s : string);
-var p : integer;
 begin
-  s := trim(s);
-  p := pos(' ', s);
-  if (p > 0) and (p < 5) then
-  begin
-    if IsRoman(copy(s, 1, p - 1)) then
-    begin
-      delete(s, 1, p);
-    end;
-  end;
   s := trim(s);
   if length(s) > 0 then
   begin
@@ -266,15 +245,20 @@ var inputList, outputList : TStringList;
   isPossibleEndOfSentence : boolean;
 
 begin
-  inputList := TStringList.Create;
-  outputList := TStringList.Create;
+  if not FileExists(inputFilename) or FileExists(outputFilename) then
+  begin
+    exit;
+  end;
 
   outputString := '';
   isPossibleEndOfSentence := false;
 
+  inputList := TStringList.Create;
+  outputList := TStringList.Create;
+
   try
     inputList.LoadFromFile(inputFileName);
-    s := CleanString(inputList.text);
+    s := CleanString(inputList);
 
     // Walk through this inputList
     codePoint := '';
