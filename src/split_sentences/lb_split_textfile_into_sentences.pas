@@ -7,15 +7,15 @@
 // Original use case is:
 //   - the user starts with a PDF, containing some text (for example a novel),
 //   - save its content into a textfile (for example with Acrobat Reader).
-//   - it can have Latin or Cyrillic/Russian characters
+//   - it can have Latin, Cyrillic/Russian or other UTF8 characters
 //   - optionally perform minor manual cleanup (for example remove references)
 //   - split it into sentences:
 //       - separated by full stops
 //       - long sentences can be splitted at semi colons too
 //   - because these sentences should act as examples for words in the
 //     language the user is learning.
-//   - they should preferably be small, but that is not always possible
-//     especially in Russian novels.
+//   - sentences should preferably be small, but that is not always possible
+// The result won't be perfect but it can be postprocessed.
 
 unit lb_split_textfile_into_sentences;
 
@@ -27,7 +27,6 @@ uses
   Classes, SysUtils;
 
 procedure SplitSentences(const inputFilename, outputFilename : string);
-procedure RemoveNotes(var s : string);
 
 implementation
 
@@ -99,25 +98,31 @@ begin
   end;
 end;
 
-procedure RemoveNotes(var s : string);
-var i, p, len, sublen : integer;
+// Remove notes in a string, specified for example as [1234]
+function RemoveNotes(const s : string) : string;
+var i, p, len, sublen, note : integer;
 begin
+  result := s;
+
   // Walk the UTF string as if it were a normal string
   p := 0;
   i := 1;
-  len := length(s);
+  len := length(result);
   while i <= len do
   begin
-    if s[i] = '[' then
+    if result[i] = '[' then
     begin
       p := i;
-    end else if s[i] = ']' then
+    end else if result[i] = ']' then
     begin
       sublen := 1 + i - p;
-      if sublen < 10 then
+      if sublen < 10  then
       begin
-        delete(s, p, sublen);
-        dec(len, sublen);
+        if TryStrToInt(copy(result, p + 1, sublen - 2), note) then
+        begin
+          delete(result, p, sublen);
+          dec(len, sublen);
+        end;
         p := 0;
       end;
     end;
@@ -144,8 +149,7 @@ begin
   result := false;
   if length(s) = 0 then exit;
 
-  // It's not necessary here to walk through UTF codepoints, if it's e.g. Russian it will
-  // return false immediately.
+  // Walk the UTF string as if it were a normal string
   for i := 1 to length(s) do
   begin
     if not IsNumeral(s[i]) then exit;
@@ -154,18 +158,22 @@ begin
 end;
 
 
-function CleanString(list : TStringList) : string;
+function CleanText(list : TStringList) : string;
 var s, item : string;
   k : integer;
 begin
-  // Adapt all lines with only a Roman numeral, because this is usually a chapter.
-  // Make it a sentence and denote it as special by a #
+  // Process it per line:
+  // - Adapt all lines with only a Roman numeral, because this is usually a chapter number.
+  //   Make it a sentence and denote it as special by a #
+  // - Remove notes (e.g. [1234]) sometimes occuring in some old literature
   for k := 0 to list.Count - 1 do
   begin
     item := trim(list[k]);
     if IsRomanNumeral(item) then list[k] := '# ' + item + '.';
+    list[k] := RemoveNotes(list[k]);
   end;
 
+  // Process the whole
   s := list.text;
 
   // Change line breaks and form feeds into spaces
@@ -180,8 +188,6 @@ begin
   repeat
     s := StringReplace(s, '  ', ' ', [rfReplaceAll]);
   until pos('  ', s) = 0;
-
-  RemoveNotes(s);
 
   result := s;
 end;
@@ -236,7 +242,7 @@ end;
 
 procedure SplitSentences(const inputFilename, outputFilename : string);
 var inputList, outputList : TStringList;
-  s : string;
+  allText : string;
   currentPosition, endPosition: PChar;
   code, len: Integer;
   codePoint: String;
@@ -250,20 +256,23 @@ begin
     exit;
   end;
 
+  inputList := TStringList.Create;
+  try
+    inputList.LoadFromFile(inputFileName);
+    allText := CleanText(inputList);
+  finally
+    inputList.Free;
+  end;
+
+
   outputString := '';
   isPossibleEndOfSentence := false;
 
-  inputList := TStringList.Create;
   outputList := TStringList.Create;
-
   try
-    inputList.LoadFromFile(inputFileName);
-    s := CleanString(inputList);
-
-    // Walk through this inputList
     codePoint := '';
-    currentPosition := PChar(s);
-    endPosition := currentPosition + length(s);
+    currentPosition := PChar(allText);
+    endPosition := currentPosition + length(allText);
     while currentPosition < endPosition do
     begin
       len := UTF8CodepointSize(currentPosition);
@@ -275,18 +284,12 @@ begin
         code := Classify(codePoint, 1);
         if code = 1 then
         begin
-          if (UTF8Length(outputString) > 30)
-          or (pos(' ', trim(outputString)) > 0) then
-          begin
-            // New sentence, and last sentence was large enough
-            // (short exclamations like 'Вы...', 'почему?', 'Да!'
-            //  are combined with next sentence)
-            sentence := '';
-            next := '';
-            ExtractStartOfSentence(outputString, sentence, next);
-            AppendCleanOutput(outputList, sentence);
-            outputString := next;
-          end;
+          // New sentence
+          sentence := '';
+          next := '';
+          ExtractStartOfSentence(outputString, sentence, next);
+          AppendCleanOutput(outputList, sentence);
+          outputString := next;
           isPossibleEndOfSentence := false;
         end
         else if code = 2 then
@@ -311,13 +314,12 @@ begin
     // Add the last string, if any
     AppendCleanOutput(outputList, outputString);
 
-    // Try to split long strings at semicolons
+    // Post process the split sentences: try to split long strings at semicolons
     SplitLongSentences(outputList, 60, 25);
 
     outputList.SaveToFile(outputFilename);
 
   finally
-    inputList.Free;
     outputList.free;
   end;
 end;
