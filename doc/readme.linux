@@ -1,0 +1,24 @@
+Possible problems on Linux and how to solve them:
+
+1) it complains about crtbegin and crtend:
+    Compile Project, Target: assign_times: Succes!, Warnings: 7, Hints: 2
+    assign_times.lpr(22,1) Warning: "crtbeginS.o" not found, this will probably cause a linking failure
+    assign_times.lpr(22,1) Warning: "crtendS.o" not found, this will probably cause a linking failure
+  Solution:
+    -> compiler options, library path, add the path where they are located on your system, for me this is /usr/lib/gcc/x86_64-linux-gnu/9/
+
+2) it says it can't link
+   Solution:
+    a) put libbass.so in the folder bin
+       Note there are multiple versions, you might need another one from the distribution, from http://www.un4seen.com/
+    b) the bin folder should be part of the compiler options, library path (it needs the so at link time)
+
+3) it can't find the file libbass.so when running
+   Solution:
+     -> export LD_LIBRARY_PATH=/home/barend/git/langbath/bin (or your path), it needs this to find the libbass.so
+     -> then start the program (e.g. ./assign_timings)
+     -> OR: then start lazarus (/usr/bin/startlazarus)
+            (until now I didn't find a way to export the ld library path inside Lazarus IDE)
+
+
+

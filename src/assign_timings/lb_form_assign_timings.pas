@@ -66,7 +66,11 @@ uses LCLIntf, LCLType, ComCtrls, lb_read_timings, lb_write_timings,
 
 procedure TFormAssignTimes.FormCreate(Sender: TObject);
 begin
+  {$IFDEF MSWINDOWS}
   InitBass(handle);
+  {$ELSE}
+  InitBass(nil);
+  {$ENDIF}
 
   // Create all frames at runtime,
   // to avoid leaking properties into their containing form, with loads of
@@ -232,7 +236,7 @@ end;
 
 procedure TFormAssignTimes.FormShow(Sender: TObject);
 begin
-  LCLIntf.ShowWindow(self.Handle, SW_MAXIMIZE);
+  WindowState := wsMaximized;
   ShowCurrent;
 end;
 

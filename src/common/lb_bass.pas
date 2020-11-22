@@ -87,12 +87,14 @@ var gInitialized : boolean;
 
 procedure InitBass(win: TBassOwner);
 begin
+  {$IFDEF MSWINDOWS}
   // check the correct BASS was loaded
   if (HIWORD(BASS_GetVersion) <> BASSVERSION) then
   begin
     Log('An incorrect version of BASS.DLL was loaded');
     exit;
   end;
+  {$endif}
 
   // initialize BASS - default device
   if not BASS_Init(-1, 44100, 0, win, nil) then

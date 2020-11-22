@@ -29,14 +29,18 @@ type
   { TFrameReadSentences }
 
   TFrameReadSentences = class(TFrame)
-    ButtonSplit: TButton;
+    ButtonGoToCurrent: TSpeedButton;
     ButtonMerge: TButton;
+    ButtonPlay: TSpeedButton;
+    ButtonSplit: TButton;
+    ButtonStop: TSpeedButton;
     EditRepeating: TEdit;
     LabelSentencesDirty: TLabel;
     LabelTimesDirty: TLabel;
     ListViewSentences: TListView;
     MemoSentence: TMemo;
     MemoTranslation: TMemo;
+    PanelTopCenter: TPanel;
     PanelTranslation: TPanel;
     PanelLength: TPanel;
     Panel3: TPanel;
@@ -49,10 +53,8 @@ type
     RadioButton3: TRadioButton;
     RadioButton4: TRadioButton;
     RadioButton5: TRadioButton;
+    RadioButtonHidden: TRadioButton;
     RadioGroupPlay: TRadioGroup;
-    ButtonPlay: TSpeedButton;
-    ButtonStop: TSpeedButton;
-    ButtonGoToCurrent: TSpeedButton;
     Splitter1: TSplitter;
     TimerAssignEnd: TTimer;
     TimerAssignBegin: TTimer;
@@ -299,6 +301,8 @@ begin
   iIsUpdating := true;
   try
 
+    // Uncheck the other ones:
+    RadioButtonHidden.Checked := true;
     RadioButton1.Checked := false;
     RadioButton2.Checked := false;
     RadioButton3.Checked := false;
@@ -368,12 +372,20 @@ end;
 procedure TFrameReadSentences.PanelTopResize(Sender: TObject);
 var w : integer;
 begin
-  w := PanelTop.Width - PanelLevel.Width;
+  w := PanelTopCenter.Width;
   TrackBarAllSound.Width := w - TrackBarAllSound.Left - 25;
   ProgressBarSentence.Width := w - ProgressBarSentence.Left - 25;
-  w := (PanelTop.Width - (ListViewSentences.Columns[0].Width + ListViewSentences.Columns[1].Width)) - 10;
+  w := (ListViewSentences.Width - (ListViewSentences.Columns[0].Width + ListViewSentences.Columns[1].Width)) - 10;
   ListViewSentences.Columns[2].Width := w div 2;
   ListViewSentences.Columns[3].Width := w div 2;
+
+  // Workaround for Linux: there is a visible radio button, but hidden behind a progress bar
+  // because otherwise non of the other ones can be UNchecked
+  RadioButtonHidden.Left := ProgressBarSentence.Left;
+  RadioButtonHidden.Top := ProgressBarSentence.Top;
+  {$ifdef WINDOWS}
+  RadioButtonHidden.Visible := false;
+  {$ENDIF}
 end;
 
 procedure TFrameReadSentences.ButtonPlayClick(Sender: TObject);

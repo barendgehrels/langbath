@@ -3,7 +3,7 @@ object FormAssignTimes: TFormAssignTimes
   Height = 395
   Top = 177
   Width = 854
-  Caption = 'FormAssignTimes'
+  Caption = 'Language Bath - Assign Times'
   ClientHeight = 395
   ClientWidth = 854
   OnCreate = FormCreate
