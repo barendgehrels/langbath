@@ -1,0 +1,268 @@
+object FormEditBookSettings: TFormEditBookSettings
+  Left = 407
+  Height = 492
+  Top = 130
+  Width = 917
+  BorderIcons = [biSystemMenu]
+  Caption = 'Add file'
+  ClientHeight = 492
+  ClientWidth = 917
+  Constraints.MinHeight = 200
+  Constraints.MinWidth = 300
+  OnShow = FormShow
+  LCLVersion = '2.0.10.0'
+  object PanelOkCancel: TPanel
+    Left = 0
+    Height = 59
+    Top = 433
+    Width = 917
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 59
+    ClientWidth = 917
+    TabOrder = 1
+    object ButtonOk: TButton
+      Left = 16
+      Height = 25
+      Top = 16
+      Width = 75
+      Caption = '&OK'
+      ModalResult = 1
+      TabOrder = 0
+    end
+    object ButtonCancel: TButton
+      Left = 112
+      Height = 25
+      Top = 16
+      Width = 75
+      Cancel = True
+      Caption = '&Cancel'
+      ModalResult = 2
+      TabOrder = 1
+    end
+  end
+  object PanelMain: TPanel
+    Left = 0
+    Height = 433
+    Top = 0
+    Width = 917
+    Align = alClient
+    BevelOuter = bvNone
+    Caption = 'Controls aligned dynamically'
+    ClientHeight = 433
+    ClientWidth = 917
+    TabOrder = 0
+    OnResize = PanelMainResize
+    object EditTranslation: TEdit
+      Left = 24
+      Height = 23
+      Top = 228
+      Width = 280
+      TabOrder = 6
+      Text = '(dynamic)'
+    end
+    object EditTarget: TEdit
+      Left = 16
+      Height = 23
+      Top = 136
+      Width = 376
+      TabOrder = 3
+      Text = '(dynamic)'
+    end
+    object EditTimings: TEdit
+      Left = 16
+      Height = 23
+      Top = 391
+      Width = 360
+      TabOrder = 12
+      Text = '(dynamic)'
+    end
+    object EditSound: TEdit
+      Left = 16
+      Height = 23
+      Top = 304
+      Width = 376
+      TabOrder = 9
+      Text = '(dynamic)'
+    end
+    object LabelTarget: TLabel
+      Left = 16
+      Height = 15
+      Top = 116
+      Width = 34
+      Caption = 'Tar&get'
+      FocusControl = EditTarget
+      ParentColor = False
+    end
+    object LabelTranslation: TLabel
+      Left = 16
+      Height = 15
+      Top = 208
+      Width = 59
+      Caption = 'Trans&lation'
+      FocusControl = EditTranslation
+      ParentColor = False
+    end
+    object LabelTimings: TLabel
+      Left = 16
+      Height = 15
+      Top = 368
+      Width = 43
+      Caption = 'Ti&mings'
+      FocusControl = EditTimings
+      ParentColor = False
+    end
+    object LabelSound: TLabel
+      Left = 24
+      Height = 15
+      Top = 280
+      Width = 34
+      Caption = '&Sound'
+      FocusControl = EditSound
+      ParentColor = False
+    end
+    object EditTitle: TEdit
+      Left = 16
+      Height = 23
+      Top = 88
+      Width = 80
+      TabOrder = 1
+      Text = '(dynamic)'
+    end
+    object LabelTitle: TLabel
+      Left = 16
+      Height = 15
+      Top = 64
+      Width = 23
+      Caption = '&Title'
+      FocusControl = EditTitle
+      ParentColor = False
+    end
+    object ButtonSelectTarget: TButton
+      Left = 648
+      Height = 25
+      Top = 160
+      Width = 75
+      Caption = 'Select'
+      OnClick = ButtonSelectTargetClick
+      TabOrder = 4
+    end
+    object ButtonSelectTranslation: TButton
+      Left = 672
+      Height = 25
+      Top = 242
+      Width = 75
+      Caption = 'Select'
+      OnClick = ButtonSelectTranslationClick
+      TabOrder = 7
+    end
+    object ButtonSelectTimings: TButton
+      Left = 648
+      Height = 25
+      Top = 391
+      Width = 75
+      Caption = 'Select'
+      OnClick = ButtonSelectTimingsClick
+      TabOrder = 13
+    end
+    object ButtonSelectSound: TButton
+      Left = 640
+      Height = 25
+      Top = 294
+      Width = 75
+      Caption = 'Select'
+      OnClick = ButtonSelectSoundClick
+      TabOrder = 10
+    end
+    object EditId: TEdit
+      Left = 464
+      Height = 23
+      Top = 24
+      Width = 80
+      ReadOnly = True
+      TabOrder = 2
+      Text = '(dynamic)'
+    end
+    object LabelId: TLabel
+      Left = 464
+      Height = 15
+      Top = 8
+      Width = 10
+      Caption = '&Id'
+      FocusControl = EditId
+      ParentColor = False
+    end
+    object LabelSrcTarget: TLabel
+      Left = 40
+      Height = 15
+      Top = 168
+      Width = 84
+      Caption = 'Source of target'
+      FocusControl = EditSrcTarget
+      ParentColor = False
+    end
+    object EditSrcTarget: TEdit
+      Left = 40
+      Height = 23
+      Top = 188
+      Width = 376
+      TabOrder = 5
+      Text = '(dynamic)'
+    end
+    object LabelSrcSound: TLabel
+      Left = 96
+      Height = 15
+      Top = 336
+      Width = 106
+      Caption = 'Source of the sound'
+      FocusControl = EditSrcSound
+      ParentColor = False
+    end
+    object EditSrcSound: TEdit
+      Left = 96
+      Height = 23
+      Top = 352
+      Width = 376
+      TabOrder = 11
+      Text = '(dynamic)'
+    end
+    object EditAuthor: TEdit
+      Left = 16
+      Height = 23
+      Top = 24
+      Width = 80
+      TabOrder = 0
+      Text = '(dynamic)'
+    end
+    object EditSrcTranslation: TEdit
+      Left = 80
+      Height = 23
+      Top = 276
+      Width = 280
+      TabOrder = 8
+      Text = '(dynamic)'
+    end
+  end
+  object LabelAuthor: TLabel
+    Left = 16
+    Height = 15
+    Top = 8
+    Width = 37
+    Caption = '&Author'
+    ParentColor = False
+  end
+  object LabelSrcTranslation: TLabel
+    Left = 72
+    Height = 15
+    Top = 256
+    Width = 129
+    Caption = 'Source of the translation'
+    ParentColor = False
+  end
+  object OpenDialog: TOpenDialog
+    Title = 'Select file'
+    Options = [ofPathMustExist, ofCreatePrompt, ofEnableSizing, ofViewDetail]
+    Left = 240
+    Top = 352
+  end
+end
