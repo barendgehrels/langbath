@@ -71,6 +71,14 @@ const
 
 function IniFileName : string;
 begin
+  if ParamCount = 1 then
+  begin
+    result := ParamStr(1);
+    if FileExists(result) then
+    begin
+      exit;
+    end;
+  end;
   result := GetAppConfigDir(false) + KIniFile;
   if not FileExists(result) then
   begin

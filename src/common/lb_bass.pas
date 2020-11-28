@@ -227,8 +227,7 @@ begin
   result := 0;
   if Active and (period < 1.0) then
   begin
-    //result := BASS_ChannelGetLevel(iChannel);
-    BASS_ChannelGetLevelEx(iChannel, @level, period, BASS_LEVEL_MONO or BASS_LEVEL_RMS);
+    BASS_ChannelGetLevelEx(iChannel, @level, period, BASS_LEVEL_MONO);
     result := level;
   end;
 end;

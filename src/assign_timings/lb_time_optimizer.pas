@@ -16,29 +16,40 @@ uses
 
 type
   TTimedLevel = record
-    level : double;
     positionSeconds : double;
+    level : double;
   end;
 
   TTimedLevelArray = array of TTimedLevel;
 
-procedure AddTimedLevel(var ar : TTimedLevelArray; aLevel, positionSeconds : double; aMax : integer);
-function TimedLevelToString(const ar : TTimedLevelArray; positionSeconds : double) : string;
+  TDetailedLevelInfo = record
+    posZeroBegin, posZeroEnd : double;
+    baseLevels : array of double;
+  end;
+
+procedure AddTimedLevel(var ar : TTimedLevelArray; positionSeconds, aLevel : double; aMax : integer = -1);
 function OptimalTime(const ar : TTimedLevelArray; positionSeconds : double) : double;
 
+function GetOptimalTime(var details : TDetailedLevelInfo;
+  const ar : TTimedLevelArray; positionSeconds : double) : boolean;
 
 implementation
 
-const KMinLevel = 0.15; // should be substantial, breathing is already 0.07
+const
+  // Level to detect silences, in units of BASS, which are between 0.0 and 1.0
+  KStartLevel = 0.01;
+  KMaxSilenceLevel = 0.3; // max level, quite on the high side
+  KMaxTimeSeconds = 0.3; // max time to look back or ahead for silence detection
 
-procedure AddTimedLevel(var ar : TTimedLevelArray; aLevel, positionSeconds : double; aMax : integer);
+
+procedure AddTimedLevel(var ar : TTimedLevelArray; positionSeconds, aLevel : double; aMax : integer);
 var n : integer;
 begin
   n := length(ar);
   SetLength(ar, n + 1);
   ar[n].level := aLevel;
   ar[n].positionSeconds := positionSeconds;
-  while length(ar) > aMax do
+  while (aMax > 0) and (length(ar) > aMax) do
   begin
     delete(ar, 0, 1);
   end;
@@ -46,29 +57,45 @@ end;
 
 function ClosestMinimalIndex(const ar : TTimedLevelArray; aPosition, baseLevel : double) : integer;
 var i : integer;
-  d, minD : double;
+  timeDiff, minTimeDiff : double;
 begin
   result := -1;
-  minD := 1.0e10;
+  minTimeDiff := 1.0e10;
   for i := low(ar) to high(ar) do
   begin
-    d := abs(aPosition - ar[i].positionSeconds);
-    if (ar[i].level <= baseLevel) and (d < minD) then
+    timeDiff := abs(aPosition - ar[i].positionSeconds);
+    if (timeDiff < KMaxTimeSeconds) and (ar[i].level <= baseLevel) and (timeDiff < minTimeDiff) then
     begin
-      minD := d;
+      minTimeDiff := timeDiff;
       result := i;
     end;
   end;
 end;
 
 procedure GetClosestZeroIndex(out index : integer; out baseLevel : double;
+  var details : TDetailedLevelInfo;
   const ar : TTimedLevelArray; aPosition : double);
+var n : integer;
 begin
-  baseLevel := KMinLevel;
+  baseLevel := KStartLevel;
+
+  details.baseLevels := [];
+  SetLength(details.baseLevels, 1);
+  details.baseLevels[0] := baseLevel;
+  n := 1;
+
   repeat
     index := ClosestMinimalIndex(ar, aPosition, baseLevel);
-    if index < 0 then baseLevel := baseLevel * 1.1;
-  until (index >= 0) or (baseLevel > 0.6);
+
+    if index < 0 then
+    begin
+      baseLevel := (baseLevel + KStartLevel) * 1.075;
+      //baseLevel := baseLevel * 1.1;
+      SetLength(details.baseLevels, n + 1);
+      details.baseLevels[n] := baseLevel;
+      inc(n);
+    end;
+  until (index >= 0) or (baseLevel > KMaxSilenceLevel);
 end;
 
 procedure GetZeroPeriod(out b, e : integer;
@@ -95,58 +122,37 @@ begin
   end;
 end;
 
-function OptimalTime(const ar : TTimedLevelArray; positionSeconds : double) : double;
+function GetOptimalTime(
+  var details : TDetailedLevelInfo;
+  const ar : TTimedLevelArray; positionSeconds : double) : boolean;
 var z, e, b : integer;
   minLevel : double;
 begin
-  result := positionSeconds;
+  result := false;
+  details.posZeroBegin := positionSeconds;
+  details.posZeroEnd := positionSeconds;
 
-  GetClosestZeroIndex(z, minLevel, ar, positionSeconds);
+  GetClosestZeroIndex(z, minLevel, details, ar, positionSeconds);
   if z >= 0 then
   begin
     GetZeroPeriod(b, e, minLevel, ar, z);
-    result := (ar[b].positionSeconds + ar[e].positionSeconds) / 2.0;
+    Details.posZeroBegin := ar[b].positionSeconds;
+    details.posZeroEnd := ar[e].positionSeconds;
+    result := true;
   end;
 end;
 
-function TimedLevelToString(const ar : TTimedLevelArray; positionSeconds : double) : string;
-var i, z, e, b : integer;
-  t, minLevel : double;
-
+function OptimalTime(const ar : TTimedLevelArray; positionSeconds : double) : double;
+var details : TDetailedLevelInfo;
 begin
-  result := '';
-  GetClosestZeroIndex(z, minLevel, ar, positionSeconds);
-  GetZeroPeriod(b, e, minLevel, ar, z);
-  for i := low(ar) to high(ar) do
+  result := positionSeconds;
+  if GetOptimalTime(details, ar, positionSeconds) then
   begin
-    if i = b then result := result + ' [';
-
-    result := result + ' ' + format('%.2f', [ar[i].level]);
-
-    if i = z then result := result + '!'; // Closest zero
-
-    if (i + 1 <= high(ar))
-    and (ar[i].positionSeconds <= positionSeconds)
-    and (ar[i + 1].positionSeconds >= positionSeconds)
-    then
-    begin
-      result := result + '*'; // Selected timestamp
-    end;
-
-    if i = e then result := result + ' ]';
-  end;
-
-  if length(ar) > 0 then
+    result := (details.posZeroBegin + details.posZeroEnd) / 2.0;
+  end
+  else
   begin
-    t := OptimalTime(ar, positionSeconds);
-    result := result
-    + format(' {%.4f .. %.4f}',
-      [ar[0].positionSeconds - positionSeconds, ar[high(ar)].positionSeconds - positionSeconds]);
-
-    result := result + format(' zero=%.3f', [ar[e].positionSeconds - ar[b].positionseconds]);
-    result := result + format(' opt=%.3f', [t]);
-    result := result + format(' minlev=%.2f', [minLevel]);
-    result := result + format(' prec=%d', [trunc(1000*(positionSeconds - t))]);
+    result := positionSeconds;
   end;
 end;
 

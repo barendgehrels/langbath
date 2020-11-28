@@ -15,7 +15,8 @@ unit lb_form_edit_book_settings;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls, lb_book_settings;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
+  lb_book_settings;
 
 type
 
@@ -38,6 +39,8 @@ type
     EditSound: TEdit;
     EditId: TEdit;
     EditSrcTranslation: TEdit;
+    LabelIdReason: TLabel;
+    LabelSoundReason: TLabel;
     LabelSrcSound: TLabel;
     LabelSrcTarget: TLabel;
     LabelTitle: TLabel;
@@ -55,13 +58,17 @@ type
     procedure ButtonSelectTargetClick(Sender: TObject);
     procedure ButtonSelectTimingsClick(Sender: TObject);
     procedure ButtonSelectTranslationClick(Sender: TObject);
+    procedure EditChange(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure PanelMainResize(Sender: TObject);
   private
     iSettings : TBookSettings;
+    iExistingIds : array of string;
     procedure Select(edit : TEdit; isText, mustExist : boolean);
+    procedure EnableControls;
   public
     procedure SetSettings(const settings : TBookSettings);
+    procedure SetExistingIds(list : TStringList);
     function GetSettings : TBookSettings;
   end;
 
@@ -139,6 +146,11 @@ begin
   Select(EditTranslation, true, false);
 end;
 
+procedure TFormEditBookSettings.EditChange(Sender: TObject);
+begin
+  EnableControls;
+end;
+
 procedure TFormEditBookSettings.FormShow(Sender: TObject);
 begin
   EditId.ReadOnly := EditId.Text <> '';
@@ -185,6 +197,12 @@ procedure TFormEditBookSettings.PanelMainResize(Sender: TObject);
     editSrc.top := current - 5;
   end;
 
+  procedure AlignReason(lab : TLabel; edit : TEdit);
+  begin
+    Lab.Left := Edit.Left;
+    Lab.Top := Edit.Top + Edit.Height + 1;
+    Lab.Width := Edit.Width;
+  end;
 
 var margin, rowHeight, current : integer;
 begin
@@ -230,10 +248,80 @@ begin
 
   // The ID, right from author, gets another margin
   AlignControls(margin * 2 + EditAuthor.Width, EditId, LabelId, nil);
+
+  AlignReason(LabelIdReason, EditId);
+  AlignReason(LabelSoundReason, EditSound);
+end;
+
+procedure TFormEditBookSettings.EnableControls;
+
+  function Has(edit : TEdit) : boolean;
+  begin
+    result := trim(edit.Text) <> '';
+  end;
+
+  function IsIdUnique : boolean;
+  var i : integer;
+    id : string;
+  begin
+    id := trim(EditId.text);
+    result := true;
+    for i := low(iExistingIds) to high(iExistingIds) do
+    begin
+      if id = iExistingIds[i] then result := false;
+    end;
+  end;
+
+  function IsIdOk(const s : string) : boolean;
+  var i : integer;
+  begin
+    result := true;
+    for i := 1 to length(s) do
+    begin
+      if not (s[i] in ['a'..'z', 'A'..'Z', '0'..'9', '_', '-']) then
+      begin
+        result := false;
+        exit;
+      end;
+    end;
+  end;
+
+var idUnique, idOk, fileOk : boolean;
+begin
+  idUnique := IsIdUnique;
+  idOk := IsIdOk(trim(EditId.text));
+  fileOk := FileExists(trim(EditSound.Text));
+  ButtonOk.Enabled := Has(EditId) and idUnique and idOk
+    and Has(EditAuthor) and Has(EditTitle)
+    and Has(EditTarget) and Has(EditTranslation) and Has(EditTimings)
+    and Has(EditSound) and fileOk;
+
+  LabelIdReason.caption := '';
+  LabelSoundReason.caption := '';
+  if not ButtonOk.Enabled then
+  begin
+    if Has(EditId) then
+    begin
+      if not idUnique then LabelIdReason.Caption := 'ID is not unique';
+      if not idOk then LabelIdReason.Caption := 'ID should be alpha numerical';
+    end;
+    if Has(EditSound) and not fileOk then LabelSoundReason.Caption := 'File does not exist';
+  end;
+end;
+
+procedure TFormEditBookSettings.SetExistingIds(list : TStringList);
+var k : integer;
+begin
+  SetLength(iExistingIds, list.count);
+  for k := 0 to list.count - 1 do
+  begin
+    iExistingIds[k] := list[k];
+  end;
 end;
 
 procedure TFormEditBookSettings.SetSettings(const settings : TBookSettings);
 begin
+  iExistingIds := [];
   iSettings := settings;
 
   EditId.Text := settings.iBookId;
@@ -251,20 +339,26 @@ begin
 end;
 
 function TFormEditBookSettings.GetSettings : TBookSettings;
+
+  function Get(edit : TEdit) : string;
+  begin
+    result := trim(edit.Text);
+  end;
+
 begin
   result := iSettings;
 
-  result.iBookId := EditId.Text;
-  result.iAuthor  := EditAuthor.Text;
-  result.iTitle  := EditTitle.Text;
-  result.iFilenameTarget := EditTarget.Text;
-  result.iFilenameTranslation := EditTranslation.Text;
-  result.iFilenameTimings := EditTimings.Text;
-  result.iFilenameSound := EditSound.Text;
+  result.iBookId := Get(EditId);
+  result.iAuthor  := Get(EditAuthor);
+  result.iTitle  := Get(EditTitle);
+  result.iFilenameTarget := Get(EditTarget);
+  result.iFilenameTranslation := Get(EditTranslation);
+  result.iFilenameTimings := Get(EditTimings);
+  result.iFilenameSound := Get(EditSound);
 
-  result.iSrcTarget := EditSrcTarget.Text;
-  result.iSrcTranslation := EditSrcTranslation.Text;
-  result.iSrcSound := EditSrcSound.Text;
+  result.iSrcTarget := Get(EditSrcTarget);
+  result.iSrcTranslation := Get(EditSrcTranslation);
+  result.iSrcSound := Get(EditSrcSound);
 end;
 
 end.

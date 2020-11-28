@@ -12,7 +12,6 @@
 //   - the user can merge and split sentences (and their translations and timings)
 //   - the user can search sentences (TODO)
 //   - the user can copy/paste the target to facilitate translations (TODO)
-//   - the user can graphically edit timings (TODO)
 
 unit lb_frame_book_sentences;
 
@@ -22,21 +21,22 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls,
-  ExtCtrls, Buttons, lb_bass, lb_time_optimizer;
+  ExtCtrls, Buttons, lb_bass, lb_time_optimizer, LCLType;
 
 type
 
   { TFrameReadSentences }
 
   TFrameReadSentences = class(TFrame)
+    Button1: TButton;
+    ButtonWaveForm: TButton;
     ButtonGoToCurrent: TSpeedButton;
     ButtonMerge: TButton;
     ButtonPlay: TSpeedButton;
     ButtonSplit: TButton;
     ButtonStop: TSpeedButton;
+    CheckBox1: TCheckBox;
     EditRepeating: TEdit;
-    LabelSentencesDirty: TLabel;
-    LabelTimesDirty: TLabel;
     ListViewSentences: TListView;
     MemoSentence: TMemo;
     MemoTranslation: TMemo;
@@ -53,7 +53,7 @@ type
     RadioButton3: TRadioButton;
     RadioButton4: TRadioButton;
     RadioButton5: TRadioButton;
-    RadioButtonHidden: TRadioButton;
+    RadioButtonNone: TRadioButton;
     RadioGroupPlay: TRadioGroup;
     Splitter1: TSplitter;
     TimerAssignEnd: TTimer;
@@ -63,16 +63,22 @@ type
     TimerRepeatAndNext: TTimer;
     TrackBarAllSound: TTrackBar;
     procedure ButtonSplitClick(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
     procedure ButtonGoToEditPlaceClick(Sender: TObject);
     procedure ButtonMergeClick(Sender: TObject);
+    procedure ButtonWaveFormClick(Sender: TObject);
+    procedure CheckBox1Change(Sender: TObject);
     procedure ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
+    procedure MemoTranslationKeyUp(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
     procedure MemoTranslationChange(Sender: TObject);
+    procedure MemoMouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure Panel3Resize(Sender: TObject);
     procedure PanelTopResize(Sender: TObject);
     procedure ButtonPlayClick(Sender: TObject);
     procedure ButtonStopClick(Sender: TObject);
+    procedure RadioButtonNoneChange(Sender: TObject);
     procedure RadioButtonRatingChange(Sender: TObject);
     procedure TimerAssignEndTimer(Sender: TObject);
     procedure TimerLevelTimer(Sender: TObject);
@@ -86,6 +92,7 @@ type
     iLastSeparationEndPosition : double;
     iLastSeparationBeginIndex : integer;
     iLastSeparationEndIndex : integer;
+
     iLastLevels : TTimedLevelArray;
 
     iRepeatingCount : integer;
@@ -103,9 +110,11 @@ type
     procedure PlaySentence(item : TListItem; timer : TTimer; additionalMs : integer);
     procedure PlayFromCurrentSentence;
 
+    function IsSplitEnabled : boolean;
     procedure SelectItem(item : TListItem; selected : Boolean);
 
     procedure AssignPeriod(item : TListItem; isBegin : boolean; pos : double);
+    procedure IndicateDirty(colIndex : integer; v : boolean; const title : string);
     procedure SetTimesDirty(v : boolean);
     procedure SetSentencesDirty(v : boolean);
 
@@ -124,7 +133,7 @@ implementation
 
 {$R *.lfm}
 
-uses LazUtf8, lb_ui_lib;
+uses LazUtf8, Math, lb_ui_lib, lb_form_wave_form;
 
 const
   KSepRepeating : integer = 0;
@@ -138,8 +147,6 @@ end;
 constructor TFrameReadSentences.Create(TheOwner: TComponent);
 begin
   inherited Create(theOwner);
-  LabelTimesDirty.Caption := '';
-  LabelSentencesDirty.Caption := '';
 end;
 
 destructor TFrameReadSentences.Destroy;
@@ -179,11 +186,12 @@ begin
 
 end;
 
-procedure TFrameReadSentences.ButtonSplitClick(Sender: TObject);
+function TFrameReadSentences.IsSplitEnabled : boolean;
 const KMinLength : integer = 1;
 var len1, len2 : integer;
-  item, newItem : TListItem;
+  item  : TListItem;
 begin
+  result := false;
   len1 := Utf8Length(MemoSentence.Text);
   len2 := Utf8Length(MemoTranslation.Text);
   item := ListViewSentences.Selected;
@@ -197,11 +205,13 @@ begin
   begin
     exit;
   end;
+
   // Splitting is only possible at begin (1) or end (calculate length)
   if (MemoSentence.SelStart = 1) and (MemoTranslation.SelStart <> 1) then
   begin
     exit;
   end;
+
   if (MemoSentence.SelStart > 1)
   and (   (MemoSentence.SelStart + MemoSentence.SelLength <> len1)
        or (MemoTranslation.SelStart + MemoTranslation.SelLength <> len2))
@@ -210,8 +220,16 @@ begin
     exit;
   end;
 
+  result := true;
+end;
+
+
+procedure TFrameReadSentences.ButtonSplitClick(Sender: TObject);
+var item, newItem : TListItem;
+begin
   // Insert a new item, and fill it with the selection
-  if MemoSentence.SelStart > 1 then
+  item := ListViewSentences.Selected;
+  if IsSplitEnabled and (item <> nil) then
   begin
     newItem := ListViewSentences.Items.Insert(item.Index + 1);
     newItem.SubItems.Add(item.SubItems[0]);
@@ -234,52 +252,86 @@ begin
   end;
 end;
 
-procedure TFrameReadSentences.Button2Click(Sender: TObject);
+procedure TFrameReadSentences.ButtonMergeClick(Sender: TObject);
+var first, second : TListItem;
+  i : integer;
 begin
+  first := ListViewSentences.Selected;
+  if first = nil then exit;
+  second := ListViewSentences.GetNextItem(first, sdBelow, [lisSelected]);
+  if second = nil then exit;
 
+  // Subitems: 0=end, 1=target, 2=translation, 3=rating if any
+  // Merge times to one period
+  first.SubItems[0] := second.SubItems[0];
+
+  // Empty rating, if any (ratings are not merged)
+  while first.SubItems.Count > 3 do first.SubItems.Delete(3);
+
+  // Merge texts by concatenation
+  for i := 1 to Min(first.SubItems.Count, second.SubItems.Count) - 1 do
+  begin
+    first.SubItems[i] := trim(first.SubItems[i]) + ' ' + trim(second.SubItems[i]);
+  end;
+
+  // Delete merged item
+  ListViewSentences.Items.Delete(second.Index);
+
+  // Reselect it to show its new contents
+  SelectItem(first, true);
+
+  SetTimesDirty(true);
+  SetSentencesDirty(true);
 end;
 
-procedure TFrameReadSentences.ButtonMergeClick(Sender: TObject);
-var item, first, last : TListItem;
-  i, index, count : integer;
-
+procedure TFrameReadSentences.ButtonWaveFormClick(Sender: TObject);
+var first, second : TListItem;
+  pos1, pos2 : double;
 begin
-  index := 0;
-  count := 0;
-  item := ListViewSentences.Selected;
-  first := item;
-  while item <> nil do
+  first := ListViewSentences.Selected;
+  if first = nil then exit;
+  second := ListViewSentences.GetNextItem(first, sdBelow, [lisSelected]);
+  if second = nil then exit;
+
+  if (first.Index + 1 = second.Index)
+  and (first.SubItems.Count > 0)
+  and TryStrToFloat(first.SubItems[0], pos1)
+  and TryStrToFloat(second.Caption, pos2)
+  then
   begin
-    if (index = 0) or (item.Index = index + 1) then
+    FormWaveForm.Initialize(iBass, pos1, pos2);
+
+    if TryStrToFloat(first.Caption, pos1) then
     begin
-      inc(count);
+       FormWaveForm.AddPositionIndication(pos1);
     end;
-    index := item.Index;
-    last := item;
-    item := ListViewSentences.GetNextItem(item, sdBelow, [lisSelected]);
-  end;
-  if count = ListViewSentences.SelCount then
-  begin
-    // Merge times to one period
-    first.SubItems[0] := last.subItems[0];
-    // Merge texts by concatenation
-    for i := 1 to first.SubItems.Count - 1 do
+    if (second.SubItems.Count > 0)
+    and TryStrToFloat(second.SubItems[0], pos2) then
     begin
-      first.SubItems[i] := first.SubItems[i] + ' ' + last.SubItems[i];
+      FormWaveForm.AddPositionIndication(pos2);
     end;
-    // Empty rating, if any
-    if first.SubItems.Count > 3 then first.SubItems[3] := '';
 
-    // Delete merged item
-    ListViewSentences.Items.Delete(last.Index);
 
-    // Reselect it to show its new contents
-    SelectItem(first, true);
+    TimerLevel.Enabled := false;
+    TimerAllSound.Enabled := false;
+    try
+      FormWaveForm.ShowModal;
+      if FormWaveForm.ModalResult = mrOK then
+      begin
+        AssignPeriod(ListViewSentences.Items[first.Index], false, FormWaveForm.GetPosition1);
+        AssignPeriod(ListViewSentences.Items[second.Index], true, FormWaveForm.GetPosition2);
+      end;
 
-    SetTimesDirty(true);
-    SetSentencesDirty(true);
+    finally
+      TimerLevel.Enabled := true;
+      TimerAllSound.Enabled := true;
+    end;
   end;
+end;
 
+procedure TFrameReadSentences.CheckBox1Change(Sender: TObject);
+begin
+  memoTranslation.Visible := CheckBox1.Checked;
 end;
 
 procedure TFrameReadSentences.ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
@@ -288,10 +340,45 @@ begin
   SelectItem(item, selected);
 end;
 
-procedure TFrameReadSentences.SelectItem(item : TListItem; selected : Boolean);
-var rating : integer;
+procedure TFrameReadSentences.MemoTranslationKeyUp(Sender: TObject;
+  var Key: Word; Shift: TShiftState);
 begin
-  ButtonMerge.Enabled := ListViewSentences.SelCount = 2;
+  ButtonSplit.Enabled := IsSplitEnabled;
+end;
+
+procedure TFrameReadSentences.SelectItem(item : TListItem; selected : Boolean);
+
+  function TwoConsecutiveRowsSelected : boolean;
+  var first, second : TListItem;
+  begin
+    result := false;
+    if ListViewSentences.SelCount = 2 then
+    begin
+      first := ListViewSentences.Selected;
+      if first <> nil then
+      begin
+        second := ListViewSentences.GetNextItem(first, sdBelow, [lisSelected]);
+        if second <> nil then
+        begin
+          result := second.Index = first.Index + 1;
+        end;
+      end;
+    end;
+  end;
+
+var rating : integer;
+  oneSelected : boolean;
+begin
+  oneSelected := ListViewSentences.SelCount = 1;
+  ButtonMerge.Enabled := TwoConsecutiveRowsSelected and not iBass.Active;
+  ButtonSplit.Enabled := IsSplitEnabled and not iBass.Active;
+  ButtonWaveForm.Enabled := TwoConsecutiveRowsSelected and not iBass.Active;
+  RadioButtonNone.Enabled := oneSelected;
+  RadioButton1.Enabled := oneSelected;
+  RadioButton2.Enabled := oneSelected;
+  RadioButton3.Enabled := oneSelected;
+  RadioButton4.Enabled := oneSelected;
+  RadioButton5.Enabled := oneSelected;
 
   if item = nil then
   begin
@@ -301,13 +388,8 @@ begin
   iIsUpdating := true;
   try
 
-    // Uncheck the other ones:
-    RadioButtonHidden.Checked := true;
-    RadioButton1.Checked := false;
-    RadioButton2.Checked := false;
-    RadioButton3.Checked := false;
-    RadioButton4.Checked := false;
-    RadioButton5.Checked := false;
+    // Checking no unchecks all other ones:
+    RadioButtonNone.Checked := true;
     if Selected then
     begin
       if item.SubItems.count > 1 then MemoSentence.text := item.SubItems[1];
@@ -364,6 +446,12 @@ begin
   end;
 end;
 
+procedure TFrameReadSentences.MemoMouseUp(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  ButtonSplit.Enabled := IsSplitEnabled;
+end;
+
 procedure TFrameReadSentences.Panel3Resize(Sender: TObject);
 begin
   MemoSentence.Height := 3 * Panel3.Height div 5;
@@ -378,14 +466,6 @@ begin
   w := (ListViewSentences.Width - (ListViewSentences.Columns[0].Width + ListViewSentences.Columns[1].Width)) - 10;
   ListViewSentences.Columns[2].Width := w div 2;
   ListViewSentences.Columns[3].Width := w div 2;
-
-  // Workaround for Linux: there is a visible radio button, but hidden behind a progress bar
-  // because otherwise non of the other ones can be UNchecked
-  RadioButtonHidden.Left := ProgressBarSentence.Left;
-  RadioButtonHidden.Top := ProgressBarSentence.Top;
-  {$ifdef WINDOWS}
-  RadioButtonHidden.Visible := false;
-  {$ENDIF}
 end;
 
 procedure TFrameReadSentences.ButtonPlayClick(Sender: TObject);
@@ -420,6 +500,21 @@ begin
   StopPlaying;
 end;
 
+procedure TFrameReadSentences.RadioButtonNoneChange(Sender: TObject);
+var item : TListItem;
+begin
+  item := ListViewSentences.Selected;
+  if not iIsUpdating
+  and (item <> nil)
+  and (ListViewSentences.SelCount = 1)
+  then
+  begin
+    AddMinimal(item, 4);
+    item.SubItems[3] := '';
+    SetTimesDirty(true);
+  end;
+end;
+
 procedure TFrameReadSentences.RadioButtonRatingChange(Sender: TObject);
 var item : TListItem;
 begin
@@ -442,10 +537,21 @@ begin
 end;
 
 procedure TFrameReadSentences.TimerLevelTimer(Sender: TObject);
-var level, a, periodSeconds : double;
+
+  function ToDecibelAndScale(level : double) : double;
+  var db : double;
+  begin
+    // Convert it to decibels
+    if level > 0 then db := 20.0 * log10(level) else db := -100;
+    if db < -100 then db := -100;
+    // Scale between 0 (silence) and ~1.0 (loud!)
+    result := (db + 100.0) / 100.0;
+  end;
+
+var level, periodSeconds : double;
   cyclicCount : integer;
 begin
-  a := 0;
+  level := 0;
   if not iBass.Active then
   begin
     level := 0;
@@ -455,42 +561,19 @@ begin
   begin
     // Get over a period between timer interval
     periodSeconds := TimerLevel.Interval / 1000.0;
+
     // Store measurements in period of ~ 0.6 second
     cyclicCount := 1 + (600 div TimerLevel.Interval);
-
     level := iBass.CurrentLevel(periodSeconds);
-    // Convert it to decibels
-    if level > 0 then a := 20.0 * log10(level) else a := -100;
-    if a < -100 then a := -100;
-    // Scale between 0 (silence) and ~1.0 (loud!)
-    a := (a + 100.0) / 100.0;
-    // Add it to cyclic array
-    AddTimedLevel(iLastLevels, a, iBass.GetPositionSeconds, cyclicCount);
-
-    //ExtraLog(format('temp %.5f %.5f %.5f', [iBass.GetPositionSeconds, level, a]));
+    AddTimedLevel(iLastLevels, iBass.GetPositionSeconds, level, cyclicCount);
   end;
-  ProgressBarLevel.Position := trunc(a * ProgressBarLevel.Max);
+  ProgressBarLevel.Position := trunc(ToDecibelAndScale(level) * ProgressBarLevel.Max);
 end;
 
 procedure TFrameReadSentences.AssignPeriod(item : TListItem; isBegin : boolean; pos : double);
-var s, timeStr : string;
+var timeStr : string;
   t : double;
 begin
-  // DEBUG
-  if item.SubItems.Count > 2 then
-  begin
-    s := TimedLevelToString(iLastLevels, pos);
-    if isBegin then
-    begin
-      ExtraLog(format('BEGIN index %d label %s at %s', [item.Index, s, item.SubItems[2]]));
-    end
-    else
-    begin
-      ExtraLog(format('END index %d label %s at %s', [item.Index, s, item.SubItems[2]]));
-    end;
-  end;
-  // END DEBUG
-
   t := OptimalTime(iLastLevels, pos);
 
   timeStr := format('%.3f', [t]);
@@ -673,16 +756,23 @@ begin
   end;
 end;
 
+procedure TFrameReadSentences.IndicateDirty(colIndex : integer; v : boolean; const title : string);
+begin
+  if v then ListViewSentences.Columns[colIndex].Caption := title + ' *'
+  else ListViewSentences.Columns[colIndex].Caption := title;
+end;
+
 procedure TFrameReadSentences.SetTimesDirty(v : boolean);
 begin
   iTimesDirty := v;
-  if iTimesDirty then LabelTimesDirty.Caption := '*' else LabelTimesDirty.Caption := '';
+  IndicateDirty(0, v, 'Begin');
+  IndicateDirty(1, v, 'End');
 end;
 
 procedure TFrameReadSentences.SetSentencesDirty(v : boolean);
 begin
   iSentencesDirty := v;
-  if iSentencesDirty then LabelSentencesDirty.Caption := '*' else LabelSentencesDirty.Caption := '';
+  IndicateDirty(3, v, 'Translation');
 end;
 
 end.

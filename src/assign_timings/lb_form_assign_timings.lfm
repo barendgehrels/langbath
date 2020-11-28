@@ -25,6 +25,7 @@ object FormAssignTimes: TFormAssignTimes
       Top = 10
       Width = 316
       ItemHeight = 15
+      OnChange = ComboBoxProjectChange
       OnSelect = ComboBoxProjectSelect
       Style = csDropDownList
       TabOrder = 0
@@ -34,8 +35,8 @@ object FormAssignTimes: TFormAssignTimes
       Left = 560
       Height = 19
       Top = 14
-      Width = 82
-      Caption = 'Save on exit'
+      Width = 215
+      Caption = 'Save on exit (or on select other book)'
       Checked = True
       State = cbChecked
       TabOrder = 1
@@ -46,7 +47,7 @@ object FormAssignTimes: TFormAssignTimes
       Height = 25
       Top = 8
       Width = 75
-      Caption = 'Add'
+      Caption = 'Add book'
       OnClick = ButtonAddClick
       TabOrder = 2
     end

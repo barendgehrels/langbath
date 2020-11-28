@@ -15,7 +15,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, lb_form_assign_timings, lb_write_timings, lb_ui_lib, lb_book_settings,
-  lb_time_optimizer, lb_form_edit_book_settings
+  lb_time_optimizer, lb_form_edit_book_settings, lb_form_wave_form
   { you can add units after this }
   ;
 
@@ -28,6 +28,7 @@ begin
   Application.Initialize;
   Application.CreateForm(TFormAssignTimes, FormAssignTimes);
   Application.CreateForm(TFormEditBookSettings, FormEditBookSettings);
+  Application.CreateForm(TFormWaveForm, FormWaveForm);
   Application.Run;
 end.
 

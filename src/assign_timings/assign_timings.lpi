@@ -35,7 +35,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="12">
+    <Units Count="13">
       <Unit0>
         <Filename Value="assign_timings.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -94,6 +94,13 @@
         <Filename Value="..\common\lb_bass.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit11>
+      <Unit12>
+        <Filename Value="lb_form_wave_form.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FormWaveForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit12>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -104,7 +111,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <Libraries Value="\usr\lib\gcc\x86_64-linux-gnu\9\;..\..\bin"/>
+      <Libraries Value="\usr\lib\gcc\x86_64-linux-gnu\9;..\..\bin"/>
       <OtherUnitFiles Value="..\common;..\common\3rdparty"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>

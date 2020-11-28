@@ -6,8 +6,8 @@ object FrameReadSentences: TFrameReadSentences
   ClientHeight = 714
   ClientWidth = 1228
   TabOrder = 0
-  DesignLeft = 688
-  DesignTop = 208
+  DesignLeft = 336
+  DesignTop = 157
   object PanelTop: TPanel
     Left = 0
     Height = 170
@@ -22,7 +22,7 @@ object FrameReadSentences: TFrameReadSentences
       Left = 1
       Height = 168
       Top = 1
-      Width = 252
+      Width = 205
       Align = alLeft
       AutoFill = True
       AutoSize = True
@@ -34,8 +34,8 @@ object FrameReadSentences: TFrameReadSentences
       ChildSizing.ShrinkVertical = crsScaleChilds
       ChildSizing.Layout = cclLeftToRightThenTopToBottom
       ChildSizing.ControlsPerLine = 1
-      ClientHeight = 149
-      ClientWidth = 248
+      ClientHeight = 148
+      ClientWidth = 201
       ItemIndex = 0
       Items.Strings = (
         'Normal'
@@ -69,29 +69,15 @@ object FrameReadSentences: TFrameReadSentences
       end
     end
     object PanelTopCenter: TPanel
-      Left = 253
+      Left = 206
       Height = 168
       Top = 1
-      Width = 924
+      Width = 971
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 168
-      ClientWidth = 924
+      ClientWidth = 971
       TabOrder = 2
-      object RadioButtonHidden: TRadioButton
-        Left = 632
-        Height = 21
-        Top = 137
-        Width = 64
-        Caption = '(hidden)'
-        Checked = True
-        Enabled = False
-        Font.Height = -9
-        Font.Name = 'Sans'
-        ParentFont = False
-        TabOrder = 10
-        TabStop = True
-      end
       object TrackBarAllSound: TTrackBar
         Left = 16
         Height = 39
@@ -108,53 +94,68 @@ object FrameReadSentences: TFrameReadSentences
       end
       object RadioButton5: TRadioButton
         Tag = 5
-        Left = 576
-        Height = 21
-        Top = 137
-        Width = 32
+        Left = 616
+        Height = 19
+        Hint = 'Quote worthy'
+        Top = 139
+        Width = 26
         Caption = '5'
         OnChange = RadioButtonRatingChange
-        TabOrder = 1
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
       end
       object RadioButton4: TRadioButton
         Tag = 4
-        Left = 544
-        Height = 21
-        Top = 137
-        Width = 32
+        Left = 584
+        Height = 19
+        Hint = 'Excellent for language learning'
+        Top = 139
+        Width = 26
         Caption = '4'
         OnChange = RadioButtonRatingChange
-        TabOrder = 2
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
       end
       object RadioButton3: TRadioButton
         Tag = 3
-        Left = 512
-        Height = 21
-        Top = 137
-        Width = 32
+        Left = 552
+        Height = 19
+        Hint = 'Useful'
+        Top = 139
+        Width = 26
         Caption = '3'
         OnChange = RadioButtonRatingChange
-        TabOrder = 3
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 4
       end
       object RadioButton2: TRadioButton
         Tag = 2
-        Left = 480
-        Height = 21
-        Top = 137
-        Width = 32
+        Left = 520
+        Height = 19
+        Hint = 'Not useful'
+        Top = 139
+        Width = 26
         Caption = '2'
         OnChange = RadioButtonRatingChange
-        TabOrder = 9
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 3
       end
       object RadioButton1: TRadioButton
         Tag = 1
-        Left = 448
-        Height = 21
-        Top = 137
-        Width = 32
+        Left = 488
+        Height = 19
+        Hint = 'Too long, too complex or not interesting'
+        Top = 139
+        Width = 26
         Caption = '1'
         OnChange = RadioButtonRatingChange
-        TabOrder = 5
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 2
       end
       object ButtonSplit: TButton
         Left = 304
@@ -163,7 +164,8 @@ object FrameReadSentences: TFrameReadSentences
         Width = 75
         Caption = 'Split'
         OnClick = ButtonSplitClick
-        TabOrder = 4
+        TabOrder = 7
+        TabStop = False
       end
       object ButtonMerge: TButton
         Left = 216
@@ -172,7 +174,8 @@ object FrameReadSentences: TFrameReadSentences
         Width = 75
         Caption = 'Merge'
         OnClick = ButtonMergeClick
-        TabOrder = 6
+        TabOrder = 8
+        TabStop = False
       end
       object ProgressBarSentence: TProgressBar
         Left = 216
@@ -180,7 +183,7 @@ object FrameReadSentences: TFrameReadSentences
         Top = 100
         Width = 100
         Smooth = True
-        TabOrder = 7
+        TabOrder = 9
       end
       object ButtonGoToCurrent: TSpeedButton
         Left = 168
@@ -272,11 +275,12 @@ object FrameReadSentences: TFrameReadSentences
       end
       object EditRepeating: TEdit
         Left = 16
-        Height = 24
+        Height = 23
         Top = 96
         Width = 24
         NumbersOnly = True
-        TabOrder = 8
+        TabStop = False
+        TabOrder = 10
         Text = '2'
       end
       object ButtonStop: TSpeedButton
@@ -445,21 +449,31 @@ object FrameReadSentences: TFrameReadSentences
         }
         OnClick = ButtonPlayClick
       end
-      object LabelTimesDirty: TLabel
-        Left = 216
-        Height = 15
-        Top = 69
-        Width = 34
-        Caption = '(dyn)'
-        ParentColor = False
+      object RadioButtonNone: TRadioButton
+        Left = 432
+        Height = 19
+        Top = 138
+        Width = 47
+        Caption = 'none'
+        OnChange = RadioButtonNoneChange
+        TabOrder = 1
       end
-      object LabelSentencesDirty: TLabel
-        Left = 257
-        Height = 15
-        Top = 69
-        Width = 34
-        Caption = '(dyn)'
-        ParentColor = False
+      object Button1: TButton
+        Left = 764
+        Height = 25
+        Top = 134
+        Width = 75
+        Caption = 'nxt'
+        TabOrder = 11
+      end
+      object ButtonWaveForm: TButton
+        Left = 680
+        Height = 25
+        Top = 134
+        Width = 75
+        Caption = 'Wave form'
+        OnClick = ButtonWaveFormClick
+        TabOrder = 12
       end
     end
   end
@@ -473,20 +487,27 @@ object FrameReadSentences: TFrameReadSentences
     Checkboxes = True
     Columns = <    
       item
+        Caption = 'Begin'
         MinWidth = 100
         Width = 100
       end    
       item
+        Caption = 'End'
         MinWidth = 100
         Width = 100
       end    
       item
+        Caption = 'Target'
         MinWidth = 100
         Width = 600
       end    
       item
+        Caption = 'Translation'
+        MinWidth = 100
       end    
       item
+        Caption = 'Rating'
+        Visible = False
         Width = 355
       end>
     Font.CharSet = ANSI_CHARSET
@@ -524,9 +545,10 @@ object FrameReadSentences: TFrameReadSentences
       Width = 1228
       Align = alClient
       BevelOuter = bvNone
-      Caption = 'PanelTranslation'
       ClientHeight = 120
       ClientWidth = 1228
+      Color = clNavy
+      ParentColor = False
       TabOrder = 0
       object MemoTranslation: TMemo
         Left = 26
@@ -542,10 +564,9 @@ object FrameReadSentences: TFrameReadSentences
         Font.Pitch = fpVariable
         Font.Quality = fqDraft
         HideSelection = False
-        Lines.Strings = (
-          'Memo2'
-        )
         OnChange = MemoTranslationChange
+        OnKeyUp = MemoTranslationKeyUp
+        OnMouseUp = MemoMouseUp
         ParentFont = False
         TabOrder = 0
       end
@@ -556,9 +577,21 @@ object FrameReadSentences: TFrameReadSentences
         Width = 26
         Align = alLeft
         BevelOuter = bvNone
+        ClientHeight = 120
+        ClientWidth = 26
         Color = 11796479
         ParentColor = False
         TabOrder = 1
+        object CheckBox1: TCheckBox
+          Left = 4
+          Height = 19
+          Top = 5
+          Width = 20
+          Checked = True
+          OnChange = CheckBox1Change
+          State = cbChecked
+          TabOrder = 0
+        end
       end
     end
     object MemoSentence: TMemo
@@ -575,9 +608,8 @@ object FrameReadSentences: TFrameReadSentences
       Font.Pitch = fpVariable
       Font.Quality = fqDraft
       HideSelection = False
-      Lines.Strings = (
-        'Memo1'
-      )
+      OnKeyUp = MemoTranslationKeyUp
+      OnMouseUp = MemoMouseUp
       ParentFont = False
       ReadOnly = True
       TabOrder = 1
@@ -607,21 +639,21 @@ object FrameReadSentences: TFrameReadSentences
   object TimerLevel: TTimer
     Interval = 20
     OnTimer = TimerLevelTimer
-    Left = 920
+    Left = 880
     Top = 58
   end
   object TimerAssignBegin: TTimer
     Enabled = False
     Interval = 360
     OnTimer = TimerAssignBeginTimer
-    Left = 984
+    Left = 968
     Top = 58
   end
   object TimerAssignEnd: TTimer
     Enabled = False
     Interval = 290
     OnTimer = TimerAssignEndTimer
-    Left = 1040
+    Left = 1056
     Top = 58
   end
 end

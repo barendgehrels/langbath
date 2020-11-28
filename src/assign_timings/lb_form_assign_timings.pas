@@ -28,6 +28,7 @@ type
     Panel1: TPanel;
     procedure ButtonAddClick(Sender: TObject);
     procedure ButtonEditClick(Sender: TObject);
+    procedure ComboBoxProjectChange(Sender: TObject);
     procedure ComboBoxProjectSelect(Sender: TObject);
 
     procedure FormCreate(Sender: TObject);
@@ -84,9 +85,21 @@ end;
 
 procedure TFormAssignTimes.ButtonAddClick(Sender: TObject);
 var newSettings : TBookSettings;
+  list : TStringList;
 begin
   newSettings := DefaultBookSettings;
+
   FormEditBookSettings.SetSettings(newSettings);
+
+  // Take care that the same ID is never used again
+  list := TStringList.Create;
+  try
+    ReadSettingsToStringList('', list);
+    FormEditBookSettings.SetExistingIds(list);
+  finally
+    list.free;
+  end;
+
   FormEditBookSettings.ShowModal;
   if FormEditBookSettings.ModalResult = mrOK then
   begin
@@ -130,6 +143,11 @@ begin
   end;
 end;
 
+procedure TFormAssignTimes.ComboBoxProjectChange(Sender: TObject);
+begin
+
+end;
+
 
 procedure TFormAssignTimes.ComboBoxProjectSelect(Sender: TObject);
 var id : string;
@@ -170,6 +188,8 @@ begin
   ReadTimingsIntoListView(iFrameReadSentences.ListViewSentences, iSettings.iFilenameTimings);
   ReadTranslationIntoListView(iFrameReadSentences.ListViewSentences, iSettings.iFilenameTranslation);
   iFrameReadSentences.ReadSound(iSettings.iFilenameSound);
+  iFrameReadSentences.TimesDirty := false;
+  iFrameReadSentences.SentencesDirty := false;
 end;
 
 procedure TFormAssignTimes.CallRead;
