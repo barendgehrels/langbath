@@ -1,7 +1,7 @@
 object FormEditBookSettings: TFormEditBookSettings
-  Left = 407
+  Left = 464
   Height = 507
-  Top = 130
+  Top = 239
   Width = 917
   BorderIcons = [biSystemMenu]
   Caption = 'Add file'

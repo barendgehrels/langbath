@@ -35,7 +35,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="13">
+    <Units Count="14">
       <Unit0>
         <Filename Value="assign_timings.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -101,6 +101,12 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit12>
+      <Unit13>
+        <Filename Value="lb_form_repeat_settings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FormRepeatSettings"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit13>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

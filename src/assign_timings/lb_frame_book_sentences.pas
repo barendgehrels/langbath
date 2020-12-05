@@ -7,6 +7,7 @@
 // and their timings, and an optional rating.
 //   - it can read out loud the sentences (called: the target)
 //   - it can repeat these sentences
+//   - during repeated replay target language/translation can be set to visible/invisible (TODO)
 //   - the user can edit timings (begin/end per sentence)
 //   - the user can rate sentences
 //   - the user can merge and split sentences (and their translations and timings)
@@ -21,7 +22,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls,
-  ExtCtrls, Buttons, lb_bass, lb_time_optimizer, LCLType;
+  ExtCtrls, Buttons, lb_bass, lb_time_optimizer, lb_form_repeat_settings, LCLType;
 
 type
 
@@ -29,13 +30,14 @@ type
 
   TFrameReadSentences = class(TFrame)
     Button1: TButton;
+    Button2: TButton;
     ButtonWaveForm: TButton;
     ButtonGoToCurrent: TSpeedButton;
     ButtonMerge: TButton;
     ButtonPlay: TSpeedButton;
     ButtonSplit: TButton;
     ButtonStop: TSpeedButton;
-    CheckBox1: TCheckBox;
+    CheckBoxTranslation: TCheckBox;
     EditRepeating: TEdit;
     ListViewSentences: TListView;
     MemoSentence: TMemo;
@@ -55,18 +57,18 @@ type
     RadioButton5: TRadioButton;
     RadioButtonNone: TRadioButton;
     RadioGroupPlay: TRadioGroup;
+    Shape1: TShape;
     Splitter1: TSplitter;
-    TimerAssignEnd: TTimer;
-    TimerAssignBegin: TTimer;
     TimerLevel: TTimer;
     TimerAllSound: TTimer;
     TimerRepeatAndNext: TTimer;
     TrackBarAllSound: TTrackBar;
+    procedure Button2Click(Sender: TObject);
     procedure ButtonSplitClick(Sender: TObject);
     procedure ButtonGoToEditPlaceClick(Sender: TObject);
     procedure ButtonMergeClick(Sender: TObject);
     procedure ButtonWaveFormClick(Sender: TObject);
-    procedure CheckBox1Change(Sender: TObject);
+    procedure CheckBoxTranslationChange(Sender: TObject);
     procedure ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
     procedure MemoTranslationKeyUp(Sender: TObject; var Key: Word;
@@ -80,20 +82,14 @@ type
     procedure ButtonStopClick(Sender: TObject);
     procedure RadioButtonNoneChange(Sender: TObject);
     procedure RadioButtonRatingChange(Sender: TObject);
-    procedure TimerAssignEndTimer(Sender: TObject);
+    procedure Shape1MouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure TimerLevelTimer(Sender: TObject);
-    procedure TimerAssignBeginTimer(Sender: TObject);
     procedure TimerAllSoundTimer(Sender: TObject);
     procedure TimerRepeatAndNextTimer(Sender: TObject);
   private
 
     iEditTimes : boolean;
-    iLastSeparationBeginPosition : double;
-    iLastSeparationEndPosition : double;
-    iLastSeparationBeginIndex : integer;
-    iLastSeparationEndIndex : integer;
-
-    iLastLevels : TTimedLevelArray;
 
     iRepeatingCount : integer;
     iPlaybackBeginPosition : double;
@@ -105,6 +101,7 @@ type
     iTimesDirty : boolean;
     iSentencesDirty : boolean;
 
+    iRepeatSettings : TArrayOfRepeatSettings;
 
     procedure StopPlaying;
     procedure PlaySentence(item : TListItem; timer : TTimer; additionalMs : integer);
@@ -114,6 +111,7 @@ type
     procedure SelectItem(item : TListItem; selected : Boolean);
 
     procedure AssignPeriod(item : TListItem; isBegin : boolean; pos : double);
+    procedure SampleAssignPeriod(item : TListItem; isBegin : boolean; pos : double);
     procedure IndicateDirty(colIndex : integer; v : boolean; const title : string);
     procedure SetTimesDirty(v : boolean);
     procedure SetSentencesDirty(v : boolean);
@@ -133,7 +131,7 @@ implementation
 
 {$R *.lfm}
 
-uses LazUtf8, Math, lb_ui_lib, lb_form_wave_form;
+uses LazUtf8, Math, lb_lib, lb_ui_lib, lb_form_wave_form;
 
 const
   KSepRepeating : integer = 0;
@@ -157,12 +155,9 @@ end;
 
 procedure TFrameReadSentences.ReadSound(const filename : string);
 begin
-  iLastSeparationBeginIndex := -1;
-  iLastSeparationEndIndex := -1;
-
   StopPlaying;
   iBass.Free;
-  iBass := TLbBass.Create(filename);
+  iBass := TLbBass.Create(filename, true);
   TrackBarAllSound.max := trunc(1000.0 * iBass.LengthSeconds);
 end;
 
@@ -252,6 +247,20 @@ begin
   end;
 end;
 
+procedure TFrameReadSentences.Button2Click(Sender: TObject);
+var maxCount : integer;
+begin
+  if TryStrToInt(EditRepeating.Caption, maxCount) then
+  begin
+    FormRepeatSettings.Init(iRepeatSettings, maxCount);
+    FormRepeatSettings.ShowModal;
+    if FormRepeatSettings.ModalResult = mrOK then
+    begin
+      FormRepeatSettings.Evaluate(iRepeatSettings);
+    end;
+  end;
+end;
+
 procedure TFrameReadSentences.ButtonMergeClick(Sender: TObject);
 var first, second : TListItem;
   i : integer;
@@ -329,9 +338,9 @@ begin
   end;
 end;
 
-procedure TFrameReadSentences.CheckBox1Change(Sender: TObject);
+procedure TFrameReadSentences.CheckBoxTranslationChange(Sender: TObject);
 begin
-  memoTranslation.Visible := CheckBox1.Checked;
+  memoTranslation.Visible := CheckBoxTranslation.Checked;
 end;
 
 procedure TFrameReadSentences.ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
@@ -411,20 +420,7 @@ begin
 
     if iEditTimes and iBass.Active and not item.Checked then
     begin
-      // Start one of the two timers.
-      // It is assigned a tad later to determine the optimal place using level measurements.
-      if Selected and (iLastSeparationBeginIndex = -1) then
-      begin
-        iLastSeparationBeginPosition := iBass.GetPositionSeconds;
-        iLastSeparationBeginIndex := item.Index;
-        TimerAssignBegin.Enabled := true;
-      end
-      else if not Selected and (iLastSeparationEndIndex = -1) then
-      begin
-        iLastSeparationEndPosition := iBass.GetPositionSeconds;
-        iLastSeparationEndIndex := item.Index;
-        TimerAssignEnd.Enabled := true;
-      end;
+      SampleAssignPeriod(item, selected, iBass.GetPositionSeconds);
     end;
 
   finally
@@ -531,6 +527,12 @@ begin
   end;
 end;
 
+procedure TFrameReadSentences.Shape1MouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  RadioButton4.Checked := true;
+end;
+
 function log10(v : double): double;
 begin
   result := ln(v) / ln(10);
@@ -549,34 +551,26 @@ procedure TFrameReadSentences.TimerLevelTimer(Sender: TObject);
   end;
 
 var level, periodSeconds : double;
-  cyclicCount : integer;
 begin
   level := 0;
   if not iBass.Active then
   begin
     level := 0;
-    iLastLevels := [];
   end
   else
   begin
     // Get over a period between timer interval
     periodSeconds := TimerLevel.Interval / 1000.0;
-
-    // Store measurements in period of ~ 0.6 second
-    cyclicCount := 1 + (600 div TimerLevel.Interval);
     level := iBass.CurrentLevel(periodSeconds);
-    AddTimedLevel(iLastLevels, iBass.GetPositionSeconds, level, cyclicCount);
   end;
   ProgressBarLevel.Position := trunc(ToDecibelAndScale(level) * ProgressBarLevel.Max);
 end;
 
 procedure TFrameReadSentences.AssignPeriod(item : TListItem; isBegin : boolean; pos : double);
 var timeStr : string;
-  t : double;
 begin
-  t := OptimalTime(iLastLevels, pos);
-
-  timeStr := format('%.3f', [t]);
+  assert(item <> nil);
+  timeStr := format('%.3f', [pos]);
 
   // Set begin-mark
   iIsUpdating := true;
@@ -595,38 +589,33 @@ begin
     iIsUpdating := false;
   end;
   SetTimesDirty(true);
-
-
-  //if iLastSeparationBeginPosition > 0 then
-  //begin
-  //  previous := ListViewSentences.Items[iLastSeparationBeginIndex - 1];
-  //  previous.SubItems[0] := timeStr;
-  //  previous.Checked := true;
-  //end;
 end;
 
-procedure TFrameReadSentences.TimerAssignBeginTimer(Sender: TObject);
+procedure TFrameReadSentences.SampleAssignPeriod(item : TListItem; isBegin : boolean; pos : double);
+var levels : TArrayOfLevel;
+  details : TDetailedLevelInfo;
+  optimalPos : double;
 begin
-  TimerAssignBegin.Enabled := false;
-  if (iLastSeparationBeginIndex >= 0)
-  and (iLastSeparationBeginIndex < ListViewSentences.Items.Count) then
+  // Get levels around this position (take 5 seconds because pauzes might be long)
+  levels := iBass.GetSamples(pos - 2.5, pos + 2.5);
+  if GetOptimalTime(details, levels, pos) then
   begin
-    AssignPeriod(ListViewSentences.Items[iLastSeparationBeginIndex], true, iLastSeparationBeginPosition);
-  end;
-  iLastSeparationBeginIndex := -1;
-end;
+    optimalPos := (details.posZeroBegin + details.posZeroEnd) / 2.0;
 
-procedure TFrameReadSentences.TimerAssignEndTimer(Sender: TObject);
-begin
-  TimerAssignEnd.Enabled := false;
-  if (iLastSeparationEndIndex >= 0)
-  and (iLastSeparationEndIndex < ListViewSentences.Items.Count) then
+    AssignPeriod(item, isBegin, optimalPos);
+    log(format('Optimum found for %.3f, assign %.3f to %d'
+    + ' (%.3f - %.3f - %.3f) (#%d - level: %.2f .. %.2f)',
+      [pos, optimalPos, item.index,
+      details.posZeroBegin, details.posZeroEnd, details.posZeroEnd - details.posZeroBegin,
+      length(levels), levels[low(levels)].level, levels[high(levels)].level]));
+  end
+  else
   begin
-    AssignPeriod(ListViewSentences.Items[iLastSeparationEndIndex], false, iLastSeparationEndPosition);
+    log(format('No optimum, assign %.3f to %d (#%d)',
+      [pos, item.index, length(levels)]));
+    AssignPeriod(item, isBegin, pos);
   end;
-  iLastSeparationEndIndex := -1;
 end;
-
 
 procedure TFrameReadSentences.TimerAllSoundTimer(Sender: TObject);
 var p : double;
@@ -695,6 +684,13 @@ procedure TFrameReadSentences.PlaySentence(item : TListItem; timer : TTimer;
 var timeOfSentenceMs : longint;
   pos1, pos2 : double;
 begin
+  if iRepeatingCount <= high(iRepeatSettings) then
+  begin
+    MemoSentence.Visible := iRepeatSettings[iRepeatingCount].showTarget;
+    MemoTranslation.Visible := iRepeatSettings[iRepeatingCount].showTranslation;
+  end;
+
+
   iBass.Stop;
   timer.Enabled := false;
   iPlaybackBeginPosition := 0;

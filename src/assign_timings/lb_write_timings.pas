@@ -30,7 +30,7 @@ procedure WriteTimingsFromListView(ListView : TListView; const filename : string
   function TimeString(const s : string) : string;
   var v : double;
   begin
-    result := s;
+    result := '';
     if TryStrToFloat(s, v) then
     begin
       result := format('%.3f', [v]);
@@ -39,11 +39,7 @@ procedure WriteTimingsFromListView(ListView : TListView; const filename : string
 
   function TimeItem(item : TListItem) : string;
   begin
-    if not item.Checked and not (item.SubItems.Count > 3) then
-    begin
-      result := '';
-      exit;
-    end;
+    // Store even unchecked timings.
     result := TimeString(item.Caption);
     if item.SubItems.Count > 0 then result := result + KTimeSeparator + TimeString(item.SubItems[0]);
     if item.SubItems.Count > 3 then result := result + KTimeSeparator + item.SubItems[3];

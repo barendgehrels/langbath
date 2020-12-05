@@ -30,18 +30,32 @@ type
   TBassOwner = Pointer;
   {$ENDIF}
 
+  TLevel = record
+    positionSeconds : double;
+    level : double;
+  end;
+  TArrayOfLevel = array of TLevel;
+
   TLbBass = class
 
-    iChannel : HSTREAM;
     iFileLoaded : boolean;
+    iEnableGetLevels : boolean;
+
+    iChannel : HSTREAM;
+
+    // Extra channel, not for playing but for returning samples.
+    // Only opened on request. A request will open file twice.
+    iChannelOnlyDecode : HSTREAM;
+
     iPaused : boolean;
     iTimer : TTimer;
 
   private
     procedure StopTimer(Sender: TObject);
+    function IsPlayable : boolean;
 
   public
-    constructor Create(const filename : string);
+    constructor Create(const filename : string; enableGetLevels : boolean);
     destructor Destroy; override;
 
     function CurrentLevel(period : double) : double;
@@ -73,6 +87,8 @@ type
 
     // Return true if actively playing.
     function Active : boolean;
+
+    function GetSamples(p1, p2 : double) : TArrayOfLevel;
 
   end;
 
@@ -110,8 +126,11 @@ begin
   BASS_Free;
 end;
 
-constructor TLbBass.Create(const filename : string);
+constructor TLbBass.Create(const filename : string; enableGetLevels : boolean);
 begin
+  iChannel := 0;
+  iChannelOnlyDecode := 0;
+
   if gInitialized and FileExists(filename) then
   begin
     iChannel := BASS_StreamCreateFile(False, PChar(filename), 0, 0, BASS_SPEAKER_FRONT);
@@ -119,21 +138,32 @@ begin
     iTimer.Enabled := false;
     iTimer.OnTimer := @StopTimer;
 
-    iFileLoaded := true;
+    iFileLoaded := iChannel > 0;
+
+    if enableGetLevels then
+    begin
+      iChannelOnlyDecode := BASS_StreamCreateFile(False, PChar(filename), 0, 0, BASS_STREAM_DECODE);
+      iEnableGetLevels := iChannelOnlyDecode > 0;
+    end
   end;
 end;
 
 destructor TLbBass.Destroy;
 begin
   BASS_StreamFree(iChannel);
+  BASS_StreamFree(iChannelOnlyDecode);
   iTimer.Free;
   inherited Destroy;
 end;
 
+function TLbBass.IsPlayable : boolean;
+begin
+  result := iFileLoaded and (iTimer <> nil);
+end;
 
 procedure TLbBass.PlayFromStart;
 begin
-  if iFileLoaded then
+  if IsPlayable then
   begin
     BASS_ChannelPlay(iChannel, False);
   end;
@@ -142,7 +172,7 @@ end;
 procedure TLbBass.PlayFromPosition(posSeconds : double);
 var p : QWORD;
 begin
-  if iFileLoaded then
+  if IsPlayable then
   begin
     iTimer.Enabled := false;
     p := BASS_ChannelSeconds2Bytes(iChannel, posSeconds);
@@ -155,14 +185,14 @@ end;
 
 procedure TLbBass.StopTimer(Sender: TObject);
 begin
-  iTimer.Enabled := false;
+  if iTimer <> nil then iTimer.Enabled := false;
   Stop;
 end;
 
 procedure TLbBass.PlaySelection(timeBeginSeconds, timeEndSeconds : double);
 var p : QWORD;
 begin
-  if iFileLoaded and (timeEndSeconds > timeBeginSeconds) then
+  if IsPlayable and (timeEndSeconds > timeBeginSeconds) then
   begin
     iTimer.Enabled := false;
     p := BASS_ChannelSeconds2Bytes(iChannel, timeBeginSeconds);
@@ -175,7 +205,7 @@ end;
 
 procedure TLbBass.Stop;
 begin
-  if iFileLoaded then
+  if IsPlayable then
   begin
     iTimer.Enabled := false;
     BASS_ChannelStop(iChannel);
@@ -184,7 +214,7 @@ end;
 
 procedure TLbBass.PauseMusic;
 begin
-  if iFileLoaded then
+  if IsPlayable then
   begin
     if iPaused then
     begin
@@ -218,7 +248,7 @@ end;
 
 function TLbBass.Active : boolean;
 begin
-  result := iFileLoaded and (BASS_ChannelIsActive(iChannel) = 1);
+  result := IsPlayable and (BASS_ChannelIsActive(iChannel) = 1);
 end;
 
 function TLbBass.CurrentLevel(period : double) : double;
@@ -231,6 +261,49 @@ begin
     result := level;
   end;
 end;
+
+function TLbBass.GetSamples(p1, p2 : double) : TArrayOfLevel;
+const period : double = 0.01; // 10 ms
+var b1, b2 : QWORD;
+  buf : array [0..2000] of BYTE;
+  info: BASS_CHANNELINFO;
+  bytesPerBatch : integer;
+  level : single;
+  pos : double;
+  n : integer;
+begin
+  result := [];
+  n := 0;
+  if iFileLoaded and iEnableGetLevels and (iChannelOnlyDecode > 0) then
+  begin
+    b1 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, p1);
+    b2 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, p2);
+
+    BASS_ChannelGetInfo(iChannelOnlyDecode, info);
+
+    bytesPerBatch := info.freq div 50; // measures every 10ms=1/100
+    if bytesPerBatch >= length(buf) then bytesPerBatch := length(buf) - 1;
+
+    log(format('Start sampling %s: %f - %f (%d - %d) period: %f, batch: %d, freq: %d',
+    [info.filename, p1, p2, b1, b2, period, bytesPerBatch, info.freq]));
+
+    BASS_ChannelSetPosition(iChannelOnlyDecode, b1, BASS_POS_BYTE);
+    // Get the levels
+    while (BASS_ChannelIsActive(iChannelOnlyDecode) > 0) and (b1 < b2) do
+    begin
+      pos := BASS_ChannelBytes2Seconds(iChannelOnlyDecode, BASS_ChannelGetPosition(iChannelOnlyDecode, BASS_POS_BYTE));
+      BASS_ChannelGetData(iChannelOnlyDecode, @buf, bytesPerBatch div 3);
+      BASS_ChannelGetLevelEx(iChannelOnlyDecode, @level, period, BASS_LEVEL_MONO);
+      inc(b1, bytesPerBatch);
+      //log(format('Read: [%d] at %d = %.4f : %.4f', [bytesRead, b1, pos, level]));
+      SetLength(result, n + 1);
+      result[n].positionSeconds := pos;
+      result[n].Level := level;
+      inc(n);
+    end;
+  end;
+end;
+
 
 end.
 

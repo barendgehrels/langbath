@@ -2,11 +2,12 @@ object FormWaveForm: TFormWaveForm
   Left = 722
   Height = 372
   Top = 324
-  Width = 572
+  Width = 617
+  ActiveControl = Panel1
   BorderIcons = []
   Caption = 'Edit timing by wave form'
   ClientHeight = 372
-  ClientWidth = 572
+  ClientWidth = 617
   Constraints.MinHeight = 250
   Constraints.MinWidth = 350
   OnHide = FormHide
@@ -15,7 +16,7 @@ object FormWaveForm: TFormWaveForm
     Left = 0
     Height = 240
     Top = 0
-    Width = 572
+    Width = 617
     Align = alClient
     OnMouseDown = PaintBoxWaveFormMouseDown
     OnMouseMove = PaintBoxWaveFormMouseMove
@@ -27,11 +28,11 @@ object FormWaveForm: TFormWaveForm
     Left = 0
     Height = 59
     Top = 313
-    Width = 572
+    Width = 617
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 59
-    ClientWidth = 572
+    ClientWidth = 617
     TabOrder = 0
     object ButtonOk: TButton
       Left = 16
@@ -66,11 +67,11 @@ object FormWaveForm: TFormWaveForm
     Left = 0
     Height = 73
     Top = 240
-    Width = 572
+    Width = 617
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 73
-    ClientWidth = 572
+    ClientWidth = 617
     TabOrder = 1
     object LabelCount: TLabel
       Left = 312
@@ -79,7 +80,6 @@ object FormWaveForm: TFormWaveForm
       Width = 65
       Caption = '(dyn debug)'
       ParentColor = False
-      Visible = False
     end
     object Panel2: TPanel
       Left = 0
@@ -199,7 +199,7 @@ object FormWaveForm: TFormWaveForm
       end
     end
     object Panel3: TPanel
-      Left = 422
+      Left = 467
       Height = 73
       Top = 0
       Width = 150
@@ -215,7 +215,6 @@ object FormWaveForm: TFormWaveForm
         Width = 5
         Brush.Color = clBlue
         Pen.Style = psClear
-        OnChangeBounds = Shape2ChangeBounds
       end
       object ButtonPlaySecond: TSpeedButton
         Left = 104
@@ -325,7 +324,6 @@ object FormWaveForm: TFormWaveForm
       Caption = 'Rescale (debug)'
       OnChange = CheckBoxRescaleChange
       TabOrder = 2
-      Visible = False
     end
     object ButtonOptimize: TButton
       Left = 168
@@ -335,21 +333,13 @@ object FormWaveForm: TFormWaveForm
       Caption = 'Optimize (debug)'
       OnClick = ButtonOptimizeClick
       TabOrder = 3
-      Visible = False
     end
   end
   object TimerPlayExample: TTimer
     Enabled = False
     Interval = 50
     OnTimer = TimerPlayExampleTimer
-    Left = 400
-    Top = 312
-  end
-  object TimerGetLevels: TTimer
-    Enabled = False
-    Interval = 20
-    OnTimer = TimerGetLevelsTimer
-    Left = 496
-    Top = 312
+    Left = 424
+    Top = 320
   end
 end

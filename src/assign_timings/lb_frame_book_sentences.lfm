@@ -2,20 +2,20 @@ object FrameReadSentences: TFrameReadSentences
   Left = 0
   Height = 714
   Top = 0
-  Width = 1228
+  Width = 1345
   ClientHeight = 714
-  ClientWidth = 1228
+  ClientWidth = 1345
   TabOrder = 0
-  DesignLeft = 336
-  DesignTop = 157
+  DesignLeft = 403
+  DesignTop = 228
   object PanelTop: TPanel
     Left = 0
     Height = 170
     Top = 0
-    Width = 1228
+    Width = 1345
     Align = alTop
     ClientHeight = 170
-    ClientWidth = 1228
+    ClientWidth = 1345
     TabOrder = 0
     OnResize = PanelTopResize
     object RadioGroupPlay: TRadioGroup
@@ -47,7 +47,7 @@ object FrameReadSentences: TFrameReadSentences
       TabOrder = 0
     end
     object PanelLevel: TPanel
-      Left = 1177
+      Left = 1294
       Height = 168
       Top = 1
       Width = 50
@@ -72,11 +72,11 @@ object FrameReadSentences: TFrameReadSentences
       Left = 206
       Height = 168
       Top = 1
-      Width = 971
+      Width = 1088
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 168
-      ClientWidth = 971
+      ClientWidth = 1088
       TabOrder = 2
       object TrackBarAllSound: TTrackBar
         Left = 16
@@ -475,13 +475,33 @@ object FrameReadSentences: TFrameReadSentences
         OnClick = ButtonWaveFormClick
         TabOrder = 12
       end
+      object Button2: TButton
+        Left = 856
+        Height = 25
+        Top = 134
+        Width = 75
+        Caption = 'Rpt set'
+        OnClick = Button2Click
+        TabOrder = 13
+      end
+      object Shape1: TShape
+        Left = 648
+        Height = 30
+        Top = 129
+        Width = 30
+        Brush.Color = clYellow
+        Pen.Color = clSilver
+        Pen.Width = 0
+        OnMouseDown = Shape1MouseDown
+        Shape = stStar
+      end
     end
   end
   object ListViewSentences: TListView
     Left = 0
     Height = 287
     Top = 170
-    Width = 1228
+    Width = 1345
     Align = alClient
     AutoSort = False
     Checkboxes = True
@@ -530,23 +550,23 @@ object FrameReadSentences: TFrameReadSentences
     Left = 0
     Height = 250
     Top = 464
-    Width = 1228
+    Width = 1345
     Align = alBottom
     BevelOuter = bvNone
     Caption = 'PanelSentencePair'
     ClientHeight = 250
-    ClientWidth = 1228
+    ClientWidth = 1345
     TabOrder = 2
     OnResize = Panel3Resize
     object PanelTranslation: TPanel
       Left = 0
       Height = 120
       Top = 0
-      Width = 1228
+      Width = 1345
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 120
-      ClientWidth = 1228
+      ClientWidth = 1345
       Color = clNavy
       ParentColor = False
       TabOrder = 0
@@ -554,7 +574,7 @@ object FrameReadSentences: TFrameReadSentences
         Left = 26
         Height = 120
         Top = 0
-        Width = 1202
+        Width = 1319
         Align = alClient
         Color = clNavy
         Font.CharSet = ANSI_CHARSET
@@ -582,13 +602,13 @@ object FrameReadSentences: TFrameReadSentences
         Color = 11796479
         ParentColor = False
         TabOrder = 1
-        object CheckBox1: TCheckBox
+        object CheckBoxTranslation: TCheckBox
           Left = 4
           Height = 19
           Top = 5
           Width = 20
           Checked = True
-          OnChange = CheckBox1Change
+          OnChange = CheckBoxTranslationChange
           State = cbChecked
           TabOrder = 0
         end
@@ -598,7 +618,7 @@ object FrameReadSentences: TFrameReadSentences
       Left = 0
       Height = 130
       Top = 120
-      Width = 1228
+      Width = 1345
       Align = alBottom
       Color = clNavy
       Font.CharSet = ANSI_CHARSET
@@ -620,7 +640,7 @@ object FrameReadSentences: TFrameReadSentences
     Left = 0
     Height = 7
     Top = 457
-    Width = 1228
+    Width = 1345
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -640,20 +660,6 @@ object FrameReadSentences: TFrameReadSentences
     Interval = 20
     OnTimer = TimerLevelTimer
     Left = 880
-    Top = 58
-  end
-  object TimerAssignBegin: TTimer
-    Enabled = False
-    Interval = 360
-    OnTimer = TimerAssignBeginTimer
-    Left = 968
-    Top = 58
-  end
-  object TimerAssignEnd: TTimer
-    Enabled = False
-    Interval = 290
-    OnTimer = TimerAssignEndTimer
-    Left = 1056
     Top = 58
   end
 end

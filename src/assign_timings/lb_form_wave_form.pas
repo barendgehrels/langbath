@@ -37,7 +37,6 @@ type
     PanelOkCancel: TPanel;
     Shape1: TShape;
     Shape2: TShape;
-    TimerGetLevels: TTimer;
     TimerPlayExample: TTimer;
     procedure ButtonHelpClick(Sender: TObject);
     procedure ButtonOptimizeClick(Sender: TObject);
@@ -53,9 +52,6 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure PaintBoxWaveFormPaint(Sender: TObject);
     procedure PaintBoxWaveFormResize(Sender: TObject);
-    procedure Shape2ChangeBounds(Sender: TObject);
-    procedure TimerGetLevelsTimer(Sender: TObject);
-    procedure TimerPeekTimer(Sender: TObject);
     procedure TimerPlayExampleTimer(Sender: TObject);
   private
 
@@ -63,7 +59,7 @@ type
     iCurrentPosition2 : double;
 
     iBass : TLbBass;
-    iLevels : TTimedLevelArray;
+    iLevels : TArrayOfLevel;
     iPositionIndications : array of double;
     iDragging1 : boolean;
     iDragging2 : boolean;
@@ -153,17 +149,11 @@ begin
 
   iLevelMin := 0;
   iLevelMax := 1;
+
+  iLevels := iBass.GetSamples(iPosMin, iPosMax);
+  GetExtremes;
   CalculateScale;
-
-  // Avoid interference
-  ButtonPlayFirst.Enabled := false;
-  ButtonPlaySecond.Enabled := false;
-
-  iLevels := [];
-  // Play just bit longer, otherwise samples might miss on the right side
-  // Because all is using timers, the number of samples is not exact.
-  iBass.PlaySelection(iPosMin, iPosMax + 0.15);
-  TimerGetLevels.Enabled := true;
+  PaintBoxWaveFormPaint(nil);
 end;
 
 procedure TFormWaveForm.AddPositionIndication(pos: double);
@@ -314,7 +304,6 @@ begin
   iDragging2 := IsMouseAt(x, iCurrentPosition2);
   if iDragging1 and iDragging2 and not (ssCtrl in shift) then iDragging2 := false;
 
-
   if iDragging1 or iDragging2 then
   begin
     PaintBoxWaveForm.cursor := crHSplit;
@@ -427,43 +416,6 @@ begin
   GetExtremes;
   CalculateScale;
   PaintBoxWaveFormPaint(nil);
-end;
-
-procedure TFormWaveForm.Shape2ChangeBounds(Sender: TObject);
-begin
-
-end;
-
-procedure TFormWaveForm.TimerGetLevelsTimer(Sender: TObject);
-var periodSeconds : double;
-begin
-  if iBass.Active then
-  begin
-    periodSeconds := TimerGetLevels.Interval / 1000.0;
-    AddTimedLevel(iLevels, iBass.GetPositionSeconds, iBass.CurrentLevel(periodSeconds));
-    labelCount.Caption := inttostr(length(iLevels));
-    if length(iLevels) mod 10 = 0 then
-    begin
-      // Repaint every 200ms
-      PaintBoxWaveFormPaint(nil);
-    end;
-  end
-  else
-  begin
-    // Playing the sample is over, refresh the screen.
-    TimerGetLevels.Enabled := false;
-    ButtonPlayFirst.Enabled := true;
-    ButtonPlaySecond.Enabled := true;
-
-    GetExtremes;
-    CalculateScale;
-    PaintBoxWaveFormPaint(nil);
-  end;
-end;
-
-procedure TFormWaveForm.TimerPeekTimer(Sender: TObject);
-begin
-
 end;
 
 procedure TFormWaveForm.TimerPlayExampleTimer(Sender: TObject);

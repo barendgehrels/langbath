@@ -12,26 +12,19 @@ unit lb_time_optimizer;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, lb_bass;
 
 type
-  TTimedLevel = record
-    positionSeconds : double;
-    level : double;
-  end;
-
-  TTimedLevelArray = array of TTimedLevel;
-
   TDetailedLevelInfo = record
     posZeroBegin, posZeroEnd : double;
     baseLevels : array of double;
   end;
 
-procedure AddTimedLevel(var ar : TTimedLevelArray; positionSeconds, aLevel : double; aMax : integer = -1);
-function OptimalTime(const ar : TTimedLevelArray; positionSeconds : double) : double;
+procedure AddTimedLevel(var ar : TArrayOfLevel; positionSeconds, aLevel : double; aMax : integer = -1);
+function OptimalTime(const ar : TArrayOfLevel; positionSeconds : double) : double;
 
-function GetOptimalTime(var details : TDetailedLevelInfo;
-  const ar : TTimedLevelArray; positionSeconds : double) : boolean;
+function GetOptimalTime(out details : TDetailedLevelInfo;
+  const ar : TArrayOfLevel; positionSeconds : double) : boolean;
 
 implementation
 
@@ -42,7 +35,7 @@ const
   KMaxTimeSeconds = 0.3; // max time to look back or ahead for silence detection
 
 
-procedure AddTimedLevel(var ar : TTimedLevelArray; positionSeconds, aLevel : double; aMax : integer);
+procedure AddTimedLevel(var ar : TArrayOfLevel; positionSeconds, aLevel : double; aMax : integer);
 var n : integer;
 begin
   n := length(ar);
@@ -55,7 +48,7 @@ begin
   end;
 end;
 
-function ClosestMinimalIndex(const ar : TTimedLevelArray; aPosition, baseLevel : double) : integer;
+function ClosestMinimalIndex(const ar : TArrayOfLevel; aPosition, baseLevel : double) : integer;
 var i : integer;
   timeDiff, minTimeDiff : double;
 begin
@@ -74,7 +67,7 @@ end;
 
 procedure GetClosestZeroIndex(out index : integer; out baseLevel : double;
   var details : TDetailedLevelInfo;
-  const ar : TTimedLevelArray; aPosition : double);
+  const ar : TArrayOfLevel; aPosition : double);
 var n : integer;
 begin
   baseLevel := KStartLevel;
@@ -99,7 +92,7 @@ begin
 end;
 
 procedure GetZeroPeriod(out b, e : integer;
-  minLevel : double; const ar : TTimedLevelArray; index : integer);
+  minLevel : double; const ar : TArrayOfLevel; index : integer);
 var i : integer;
   c : boolean;
 begin
@@ -123,8 +116,8 @@ begin
 end;
 
 function GetOptimalTime(
-  var details : TDetailedLevelInfo;
-  const ar : TTimedLevelArray; positionSeconds : double) : boolean;
+  out details : TDetailedLevelInfo;
+  const ar : TArrayOfLevel; positionSeconds : double) : boolean;
 var z, e, b : integer;
   minLevel : double;
 begin
@@ -142,10 +135,11 @@ begin
   end;
 end;
 
-function OptimalTime(const ar : TTimedLevelArray; positionSeconds : double) : double;
+function OptimalTime(const ar : TArrayOfLevel; positionSeconds : double) : double;
 var details : TDetailedLevelInfo;
 begin
   result := positionSeconds;
+  details.baseLevels := [];
   if GetOptimalTime(details, ar, positionSeconds) then
   begin
     result := (details.posZeroBegin + details.posZeroEnd) / 2.0;
