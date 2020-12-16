@@ -24,6 +24,7 @@ procedure Log(const s : string);
 
 implementation
 
+var gLogLock: TRTLCriticalSection;
 
 function SplitString(s : string; sep : char) : TArrayOfString;
 var p, n : integer;
@@ -67,14 +68,30 @@ var filename : string;
   txt : TextFile;
   exists : boolean;
 begin
-  if not AssureConfigFolder then exit;
+  EnterCriticalSection(gLogLock);
+  try
 
-  filename := GetAppConfigDir(false) + 'langbath.log';
-  exists := FileExists(filename);
-  AssignFile(txt, filename);
-  if exists then Append(txt) else Rewrite(txt);
-  WriteLn(txt, s);
-  CloseFile(txt);
+    if not AssureConfigFolder then exit;
+
+    filename := GetAppConfigDir(false) + 'langbath.log';
+    exists := FileExists(filename);
+    AssignFile(txt, filename);
+    if exists then Append(txt) else Rewrite(txt);
+    WriteLn(txt, s);
+    CloseFile(txt);
+  finally
+    LeaveCriticalSection(gLogLock);
+  end;
+end;
+
+initialization
+begin
+  InitCriticalSection(gLogLock);
+end;
+
+finalization
+begin
+  DoneCriticalSection(gLogLock);
 end;
 
 end.

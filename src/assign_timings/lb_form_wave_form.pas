@@ -94,7 +94,7 @@ implementation
 
 {$R *.lfm}
 
-uses Math, lb_lib;
+uses Math;
 
 { TFormWaveForm }
 

@@ -9,6 +9,7 @@
 //   - it can repeat these sentences
 //   - during repeated replay target language/translation can be set to visible/invisible (TODO)
 //   - the user can edit timings (begin/end per sentence)
+//   - the user can graphically edit timings
 //   - the user can rate sentences
 //   - the user can merge and split sentences (and their translations and timings)
 //   - the user can search sentences (TODO)
