@@ -105,6 +105,7 @@
         <Filename Value="lb_form_repeat_settings.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormRepeatSettings"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit13>
     </Units>
@@ -136,6 +137,11 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CompilerMessages>
+        <IgnoredMessages idx5024="True"/>
+      </CompilerMessages>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

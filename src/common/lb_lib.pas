@@ -17,7 +17,7 @@ uses
 type TArrayOfString = array of string;
 
 function AssureConfigFolder : boolean;
-function SplitTimings(out a, b : double; const s : string) : boolean;
+function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
 function SplitString(s : string; sep : char) : TArrayOfString;
 
 procedure Log(const s : string);
@@ -45,13 +45,22 @@ begin
 
 end;
 
-function SplitTimings(out a, b : double; const s : string) : boolean;
+function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
 var ar : TArrayOfString;
 begin
+  a := 0;
+  b := 0;
+  r := 0;
+
   ar := SplitString(s, #9);
+
   if length(ar) >= 2 then
   begin
     result := TryStrToFloat(ar[0], a) and TryStrToFloat(ar[1], b);
+  end;
+  if length(ar) >= 3 then
+  begin
+    TryStrToInt(ar[2], r);
   end;
 end;
 

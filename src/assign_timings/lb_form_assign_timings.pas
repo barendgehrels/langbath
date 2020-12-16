@@ -171,7 +171,6 @@ procedure TFormAssignTimes.FormDestroy(Sender: TObject);
 begin
   CallSave;
   iFrameReadSentences.Free;
-  EndBass;
 end;
 
 procedure TFormAssignTimes.ReadSettings(const bookId : string);

@@ -7,12 +7,12 @@
 // and their timings, and an optional rating.
 //   - it can read out loud the sentences (called: the target)
 //   - it can repeat these sentences
-//   - during repeated replay target language/translation can be set to visible/invisible (TODO)
+//   - during repeated replay target language/translation can be set to visible/invisible
 //   - the user can edit timings (begin/end per sentence)
 //   - the user can graphically edit timings
 //   - the user can rate sentences
 //   - the user can merge and split sentences (and their translations and timings)
-//   - the user can search sentences (TODO)
+//   - the user can search sentences or timings
 //   - the user can copy/paste the target to facilitate translations (TODO)
 
 unit lb_frame_book_sentences;
@@ -31,18 +31,20 @@ type
 
   TFrameReadSentences = class(TFrame)
     Button1: TButton;
-    Button2: TButton;
+    ButtonRepeatSettings: TButton;
+    ButtonSearch: TButton;
     ButtonWaveForm: TButton;
     ButtonGoToCurrent: TSpeedButton;
     ButtonMerge: TButton;
     ButtonPlay: TSpeedButton;
     ButtonSplit: TButton;
     ButtonStop: TSpeedButton;
-    CheckBoxTranslation: TCheckBox;
+    EditSearch: TEdit;
     EditRepeating: TEdit;
     ListViewSentences: TListView;
     MemoSentence: TMemo;
     MemoTranslation: TMemo;
+    PanelSentence: TPanel;
     PanelTopCenter: TPanel;
     PanelTranslation: TPanel;
     PanelLength: TPanel;
@@ -60,16 +62,14 @@ type
     RadioGroupPlay: TRadioGroup;
     Shape1: TShape;
     Splitter1: TSplitter;
-    TimerLevel: TTimer;
-    TimerAllSound: TTimer;
-    TimerRepeatAndNext: TTimer;
+    TimerState: TTimer;
     TrackBarAllSound: TTrackBar;
-    procedure Button2Click(Sender: TObject);
+    procedure ButtonRepeatSettingsClick(Sender: TObject);
+    procedure ButtonSearchClick(Sender: TObject);
     procedure ButtonSplitClick(Sender: TObject);
     procedure ButtonGoToEditPlaceClick(Sender: TObject);
     procedure ButtonMergeClick(Sender: TObject);
     procedure ButtonWaveFormClick(Sender: TObject);
-    procedure CheckBoxTranslationChange(Sender: TObject);
     procedure ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
     procedure MemoTranslationKeyUp(Sender: TObject; var Key: Word;
@@ -77,6 +77,7 @@ type
     procedure MemoTranslationChange(Sender: TObject);
     procedure MemoMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure TimerStateOnTimer(Sender: TObject);
     procedure Panel3Resize(Sender: TObject);
     procedure PanelTopResize(Sender: TObject);
     procedure ButtonPlayClick(Sender: TObject);
@@ -85,17 +86,9 @@ type
     procedure RadioButtonRatingChange(Sender: TObject);
     procedure Shape1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
-    procedure TimerLevelTimer(Sender: TObject);
-    procedure TimerAllSoundTimer(Sender: TObject);
-    procedure TimerRepeatAndNextTimer(Sender: TObject);
   private
 
     iEditTimes : boolean;
-
-    iRepeatingCount : integer;
-    iPlaybackBeginPosition : double;
-    iPlaybackEndPosition : double;
-
     iIsUpdating : boolean;
 
     iBass : TLbBass;
@@ -104,8 +97,15 @@ type
 
     iRepeatSettings : TArrayOfRepeatSettings;
 
+    iRepeatSentenceIndex : integer;
+    iRepeatCount : integer;
+
+    function BassLoop(Sender: TObject; repeatIndex : integer) : boolean;
+    procedure BassLoopEnd(Sender: TObject);
+
     procedure StopPlaying;
-    procedure PlaySentence(item : TListItem; timer : TTimer; additionalMs : integer);
+    procedure ShowMemos;
+    procedure PlaySentence(item : TListItem);
     procedure PlayFromCurrentSentence;
 
     function IsSplitEnabled : boolean;
@@ -116,6 +116,7 @@ type
     procedure IndicateDirty(colIndex : integer; v : boolean; const title : string);
     procedure SetTimesDirty(v : boolean);
     procedure SetSentencesDirty(v : boolean);
+    procedure SelectAndShowListItem(item : TListItem);
 
   public
 
@@ -162,24 +163,42 @@ begin
   TrackBarAllSound.max := trunc(1000.0 * iBass.LengthSeconds);
 end;
 
+procedure TFrameReadSentences.SelectAndShowListItem(item : TListItem);
+var sel : TListItem;
+  hasFocus : boolean;
+begin
+  hasFocus := ListViewSentences.Focused;
+
+  // If it is already selected, no action is necessary
+  sel := ListViewSentences.Selected;
+  if (sel <> nil) and (sel.index = item.index) and (ListViewSentences.SelCount = 1) then exit;
+
+  // Select and show the item (avoiding flicker)
+  if sel <> nil then sel.Selected := false;
+  if ListViewSentences.SelCount > 0 then ListViewSentences.ClearSelection;
+  item.Selected := true;
+  item.Focused := true;
+  item.MakeVisible(false);
+
+  // The list can loose the focus, refocus
+  if hasFocus then ListViewSentences.SetFocus;
+end;
+
 procedure TFrameReadSentences.ButtonGoToEditPlaceClick(Sender: TObject);
 var i : integer;
-  it : TListItem;
+  item : TListItem;
 begin
   ListViewSentences.ItemIndex := -1;
-  // Deliberately skip the first one
+  // Deliberately skip the first item
   for i := 1 to ListViewSentences.Items.Count - 1 do
   begin
-    it := ListViewSentences.Items[i];
-    if (it.SubItems.Count < 2) or (it.Caption = '') or (it.SubItems[0] = '') then
+    item := ListViewSentences.Items[i];
+    if (item.SubItems.Count < 2) or (item.Caption = '') or (item.SubItems[0] = '') then
     begin
-      it.Selected := true;
-      it.Focused := true;
-      it.MakeVisible(false);
+      SelectAndShowListItem(item);
       exit;
     end;
   end;
-
 end;
 
 function TFrameReadSentences.IsSplitEnabled : boolean;
@@ -248,7 +267,7 @@ begin
   end;
 end;
 
-procedure TFrameReadSentences.Button2Click(Sender: TObject);
+procedure TFrameReadSentences.ButtonRepeatSettingsClick(Sender: TObject);
 var maxCount : integer;
 begin
   if TryStrToInt(EditRepeating.Caption, maxCount) then
@@ -259,6 +278,133 @@ begin
     begin
       FormRepeatSettings.Evaluate(iRepeatSettings);
     end;
+  end;
+end;
+
+procedure TFrameReadSentences.ButtonSearchClick(Sender: TObject);
+
+  // Searches in target or in translation. All searches are case insensitive.
+  // User can add space to, for example, search for " air" and not find "hair"
+  // (though this will not be if "air" is at the start).
+  // Checkboxes for whole-word-only or case-sensitive might be added later.
+  function Search(const s : string; start, finish : integer) : boolean;
+  var i, j : integer;
+    item : TListItem;
+  begin
+    result := false;
+    for i := start to finish do
+    begin
+      item := ListViewSentences.Items[i];
+      for j := 1 to 2 do
+      begin
+        if j < item.SubItems.count then
+        begin
+          if UTF8Pos(s, UTF8LowerCase(item.SubItems[j])) >= 1 then
+          begin
+            SelectAndShowListItem(item);
+            result := true;
+            exit;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  // Searches timing (between begin/end). It is done sequentiall and not binary,
+  // because there is no hard guarantee that all timings are ordered
+  function Search(timing : double; start, finish : integer) : boolean;
+  var i : integer;
+    item : TListItem;
+    t0, t1 : double;
+  begin
+    result := false;
+    for i := start to finish do
+    begin
+      item := ListViewSentences.Items[i];
+      if (item.SubItems.count >= 1)
+      and TryStrToFloat(item.caption, t0)
+      and TryStrToFloat(item.SubItems[0], t1)
+      and (t0 <= timing)
+      and (timing <= t1)
+      then
+      begin
+        SelectAndShowListItem(item);
+        result := true;
+        exit;
+      end;
+    end;
+  end;
+
+var item : TListItem;
+  start : integer;
+  s : string;
+  timing : double;
+
+begin
+  s := UTF8LowerCase(EditSearch.text);
+  if trim(s) = '' then exit;
+
+  item := ListViewSentences.Selected;
+  if item <> nil then start := item.Index;
+
+  if TryStrToFloat(s, timing) then
+  begin
+    // Try to search from next of current selection, and stop at the first hit
+    if Search(timing, start + 1, ListViewSentences.Items.Count - 1) then exit;
+
+    // Not found, search to just before current selection
+    if start > 0 then Search(timing, 0, start - 1);
+  end
+  else
+  begin
+    if Search(s, start + 1, ListViewSentences.Items.Count - 1) then exit;
+    if start > 0 then Search(s, 0, start - 1);
+  end;
+end;
+
+function TFrameReadSentences.BassLoop(Sender: TObject; repeatIndex : integer) : boolean;
+var item : TListItem;
+begin
+  result := false;
+
+  // At unselect, or selecting another sentence, looping stops
+  item := ListViewSentences.selected;
+  if (item = nil) or (item.Index <> iRepeatSentenceIndex) then
+  begin
+    iRepeatSentenceIndex := -1;
+    StopPlaying;
+    exit;
+  end;
+
+  result := repeatIndex < iRepeatCount;
+  ProgressBarSentence.Position := repeatIndex * 1000;
+
+  ExtraLog(format('loop index=%d', [repeatIndex]));
+end;
+
+procedure TFrameReadSentences.BassLoopEnd(Sender: TObject);
+var item : TListItem;
+  nextIndex : integer;
+begin
+  item := ListViewSentences.selected;
+  if item = nil then exit;
+
+  // Move to next item if looping started at this item, otherwise restart at selected item
+  if item.Index = iRepeatSentenceIndex then nextIndex := item.Index + 1
+  else nextIndex := item.Index;
+
+  if nextIndex < ListViewSentences.Items.Count then
+  begin
+    ExtraLog(format('next idx=%d', [nextIndex]));
+
+    // Play next one
+    item := ListViewSentences.Items[nextIndex];
+    SelectAndShowListItem(item);
+    PlaySentence(item);
+  end
+  else
+  begin
+    StopPlaying;
   end;
 end;
 
@@ -321,9 +467,7 @@ begin
       FormWaveForm.AddPositionIndication(pos2);
     end;
 
-
-    TimerLevel.Enabled := false;
-    TimerAllSound.Enabled := false;
+    TimerState.Enabled := false;
     try
       FormWaveForm.ShowModal;
       if FormWaveForm.ModalResult = mrOK then
@@ -333,15 +477,9 @@ begin
       end;
 
     finally
-      TimerLevel.Enabled := true;
-      TimerAllSound.Enabled := true;
+      TimerState.Enabled := true;
     end;
   end;
-end;
-
-procedure TFrameReadSentences.CheckBoxTranslationChange(Sender: TObject);
-begin
-  memoTranslation.Visible := CheckBoxTranslation.Checked;
 end;
 
 procedure TFrameReadSentences.ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
@@ -449,9 +587,53 @@ begin
   ButtonSplit.Enabled := IsSplitEnabled;
 end;
 
+procedure TFrameReadSentences.TimerStateOnTimer(Sender: TObject);
+  function log10(v : double): double;
+  begin
+    result := ln(v) / ln(10);
+  end;
+
+  function ToDecibelAndScale(level : double) : double;
+  var db : double;
+  begin
+    // Convert it to decibels
+    if level > 0 then db := 20.0 * log10(level) else db := -100;
+    if db < -100 then db := -100;
+    // Scale between 0 (silence) and ~1.0 (loud!)
+    result := (db + 100.0) / 100.0;
+  end;
+
+var pos, loopFraction, level : double;
+  bassActive : boolean;
+begin
+  bassActive := iBass.GetReport(pos, loopFraction, level);
+  if bassActive then
+  begin
+    //log(format('TIMER - got report %.3f %.3f', [pos, level]));
+    TrackBarAllSound.position := trunc(pos * 1000.0);
+    ProgressBarLevel.Position := trunc(ToDecibelAndScale(level) * ProgressBarLevel.Max);
+
+    if RadioGroupPlay.ItemIndex >= 2 then
+    begin
+      ProgressBarSentence.Position := trunc((iBass.iRepeatIndex + loopFraction) * 1000.0);
+    end;
+
+  end
+  else
+  begin
+    ProgressBarLevel.Position := 0;
+  end;
+
+  ButtonStop.Enabled := bassActive;
+
+  ButtonPlay.Enabled := not bassActive;
+  ButtonGoToCurrent.Enabled := not bassActive;
+  RadioGroupPlay.Enabled := not bassActive;
+end;
+
 procedure TFrameReadSentences.Panel3Resize(Sender: TObject);
 begin
-  MemoSentence.Height := 3 * Panel3.Height div 5;
+  PanelSentence.Height := 3 * Panel3.Height div 5;
 end;
 
 procedure TFrameReadSentences.PanelTopResize(Sender: TObject);
@@ -472,24 +654,37 @@ begin
     0 : PlayFromCurrentSentence;
     1 : begin
           iEditTimes := true;
+          ShowMemos;
           PlayFromCurrentSentence;
         end;
-    2 : begin
+    2 : if TryStrToInt(EditRepeating.Text, iRepeatCount) then
+        begin
           ExtraLog('Play repeating');
-          iRepeatingCount := 0;
-          PlaySentence(ListViewSentences.Selected, TimerRepeatAndNext, KSepRepeating);
+          ShowMemos;
+
+          ProgressBarSentence.Max := iRepeatCount * 1000;
+          ProgressBarSentence.Position := 0;
+
+          PlaySentence(ListViewSentences.Selected);
         end;
     3 : begin
-          iRepeatingCount := 0;
-          PlaySentence(ListViewSentences.Selected, TimerRepeatAndNext, KSepOne);
+          ShowMemos;
+          iRepeatCount := 0;
+          ProgressBarSentence.Max := 1000;
+          ProgressBarSentence.Position := 0;
+          PlaySentence(ListViewSentences.Selected);
         end;
   end;
+  ListViewSentences.SetFocus;
 end;
 
 procedure TFrameReadSentences.StopPlaying;
 begin
   if iBass <> nil then iBass.Stop;
-  TimerRepeatAndNext.Enabled := false;
+  ProgressBarLevel.Position := 0;
+  ProgressBarSentence.Position := 0;
+
+  ShowMemos;
 end;
 
 procedure TFrameReadSentences.ButtonStopClick(Sender: TObject);
@@ -532,39 +727,6 @@ procedure TFrameReadSentences.Shape1MouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   RadioButton4.Checked := true;
-end;
-
-function log10(v : double): double;
-begin
-  result := ln(v) / ln(10);
-end;
-
-procedure TFrameReadSentences.TimerLevelTimer(Sender: TObject);
-
-  function ToDecibelAndScale(level : double) : double;
-  var db : double;
-  begin
-    // Convert it to decibels
-    if level > 0 then db := 20.0 * log10(level) else db := -100;
-    if db < -100 then db := -100;
-    // Scale between 0 (silence) and ~1.0 (loud!)
-    result := (db + 100.0) / 100.0;
-  end;
-
-var level, periodSeconds : double;
-begin
-  level := 0;
-  if not iBass.Active then
-  begin
-    level := 0;
-  end
-  else
-  begin
-    // Get over a period between timer interval
-    periodSeconds := TimerLevel.Interval / 1000.0;
-    level := iBass.CurrentLevel(periodSeconds);
-  end;
-  ProgressBarLevel.Position := trunc(ToDecibelAndScale(level) * ProgressBarLevel.Max);
 end;
 
 procedure TFrameReadSentences.AssignPeriod(item : TListItem; isBegin : boolean; pos : double);
@@ -618,115 +780,36 @@ begin
   end;
 end;
 
-procedure TFrameReadSentences.TimerAllSoundTimer(Sender: TObject);
-var p : double;
+procedure TFrameReadSentences.ShowMemos;
+var showMemo, outOfRange : boolean;
 begin
-  p := iBass.GetPositionSeconds;
-  TrackBarAllSound.position := trunc(p * 1000.0);
-  ProgressBarSentence.position := trunc(1000.0 * (p - iPlaybackBeginPosition));
-  ExtraLog(format('Now at %.3f, %d, max=%d, active=%d', [p - iPlaybackBeginPosition,
-  ProgressBarSentence.position, ProgressBarSentence.max, ord(iBass.Active)]));
-
-  ButtonPlay.Enabled := not iBass.Active;
-  ButtonGoToCurrent.Enabled := not iBass.Active;
-  RadioGroupPlay.Enabled := not iBass.Active;
-  ButtonStop.Enabled := iBass.Active;
+  // Memo's are only hidden in repeating mode. In all other cases they are shown.
+  showMemo := RadioGroupPlay.ItemIndex <> 2;
+  outOfRange := (iBass = nil) or (iBass.RepeatIndex < low(iRepeatSettings)) or (iBass.RepeatIndex > high(iRepeatSettings));
+  MemoSentence.Visible := showMemo or outOfRange or iRepeatSettings[iBass.RepeatIndex].showTarget;
+  MemoTranslation.Visible := showMemo or outOfRange or iRepeatSettings[iBass.RepeatIndex].showTranslation;
 end;
 
-procedure TFrameReadSentences.TimerRepeatAndNextTimer(Sender: TObject);
-var it : TListItem;
-  maxCount : integer;
-  add : integer;
-
-begin
-  iBass.Stop;
-  TimerRepeatAndNext.Enabled := false;
-
-  inc(iRepeatingCount);
-
-  add := KSepOne;
-  maxCount := 1;
-  if RadioGroupPlay.ItemIndex = 2 then
-  begin
-    TryStrToInt(EditRepeating.Caption, maxCount);
-    add := KSepRepeating;
-    ExtraLog(format('Continue, max=%d, now=%d, add=%d', [maxCount, iRepeatingCount, add]));
-  end;
-
-  if iRepeatingCount < maxCount then
-  begin
-    // Play the same sentence again
-    ExtraLog('play again');
-    PlaySentence(ListViewSentences.Selected, TimerRepeatAndNext, add);
-  end
-  else
-  begin
-    // Play next sentence (from selection, users might change it)
-    ExtraLog('play next');
-    iRepeatingCount := 0;
-    it := ListViewSentences.selected;
-    if (it <> nil) and (it.Index + 1 < ListViewSentences.Items.Count) then
-    begin
-      // Unselect current one
-      it.Selected := false;
-
-      // Select next one
-      it := ListViewSentences.Items[it.Index + 1];
-      it.Selected := true;
-      it.Focused := true;
-      it.MakeVisible(false);
-      PlaySentence(it, TimerRepeatAndNext, add);
-    end;
-  end;
-end;
-
-procedure TFrameReadSentences.PlaySentence(item : TListItem; timer : TTimer;
-    additionalMs : integer);
-var timeOfSentenceMs : longint;
+procedure TFrameReadSentences.PlaySentence(item : TListItem);
+var
   pos1, pos2 : double;
 begin
-  if iRepeatingCount <= high(iRepeatSettings) then
-  begin
-    MemoSentence.Visible := iRepeatSettings[iRepeatingCount].showTarget;
-    MemoTranslation.Visible := iRepeatSettings[iRepeatingCount].showTranslation;
-  end;
+  ShowMemos;
 
+  iRepeatSentenceIndex := -1;
+  ProgressBarSentence.Position := 0;
 
-  iBass.Stop;
-  timer.Enabled := false;
-  iPlaybackBeginPosition := 0;
-  iPlaybackEndPosition := 0;
-
-  if item = nil then
-  begin
-    exit;
-  end;
-
-  ExtraLog(format('PlaySentence %d, int=%d, add=%d', [item.Index, timer.Interval, additionalMs]));
-
-  if TryStrToFloat(item.Caption, pos1)
+  if (item <> nil)
+  and TryStrToFloat(item.Caption, pos1)
   and TryStrToFloat(item.SubItems[0], pos2)
   then
   begin
-    iBass.PlaySelection(pos1, pos2);
-    timeOfSentenceMs := trunc(1000.0 * (pos2 - pos1));
-    ExtraLog(format('sel %.3f %.3f time %u', [pos1, pos2, timeOfSentenceMs]));
-    if timeOfSentenceMs > 0 then
-    begin
-      ExtraLog(format('sel %.3f %.3f time %.3f', [pos1, pos2, timeOfSentenceMs / 1000.0]));
-      iPlaybackBeginPosition := pos1;
-      iPlaybackEndPosition := pos2;
-      timer.Interval := timeOfSentenceMs + additionalMs;
-      timer.Enabled := true;
+    iBass.OnLoop := @BassLoop;
+    iBass.OnLoopEnd := @BassLoopEnd;
 
-      ProgressBarSentence.Max := timeOfSentenceMs;
-      ProgressBarSentence.Position := 0;
+    iBass.LoopSelection(pos1, pos2);
 
-      // This doesn't look good in long files.
-      //TrackBarAllSound.SelStart := trunc(1000 * pos1);
-      //TrackBarAllSound.SelEnd := trunc(1000 * pos2);
-      //TrackBarAllSound.ShowSelRange := true;
-    end;
+    iRepeatSentenceIndex := item.Index;
   end;
 end;
 

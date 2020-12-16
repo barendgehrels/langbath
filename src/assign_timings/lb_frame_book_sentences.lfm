@@ -2,9 +2,9 @@ object FrameReadSentences: TFrameReadSentences
   Left = 0
   Height = 714
   Top = 0
-  Width = 1345
+  Width = 1418
   ClientHeight = 714
-  ClientWidth = 1345
+  ClientWidth = 1418
   TabOrder = 0
   DesignLeft = 403
   DesignTop = 228
@@ -12,17 +12,17 @@ object FrameReadSentences: TFrameReadSentences
     Left = 0
     Height = 170
     Top = 0
-    Width = 1345
+    Width = 1418
     Align = alTop
     ClientHeight = 170
-    ClientWidth = 1345
+    ClientWidth = 1418
     TabOrder = 0
     OnResize = PanelTopResize
     object RadioGroupPlay: TRadioGroup
       Left = 1
       Height = 168
       Top = 1
-      Width = 205
+      Width = 192
       Align = alLeft
       AutoFill = True
       AutoSize = True
@@ -35,19 +35,19 @@ object FrameReadSentences: TFrameReadSentences
       ChildSizing.Layout = cclLeftToRightThenTopToBottom
       ChildSizing.ControlsPerLine = 1
       ClientHeight = 148
-      ClientWidth = 201
+      ClientWidth = 188
       ItemIndex = 0
       Items.Strings = (
         'Normal'
         'Edit unchecked times'
         'Repeat each sentence X times'
-        'Play each sentence with a pause'
+        'Play each sentence once'
       )
       ParentColor = False
       TabOrder = 0
     end
     object PanelLevel: TPanel
-      Left = 1294
+      Left = 1367
       Height = 168
       Top = 1
       Width = 50
@@ -69,14 +69,14 @@ object FrameReadSentences: TFrameReadSentences
       end
     end
     object PanelTopCenter: TPanel
-      Left = 206
+      Left = 193
       Height = 168
       Top = 1
-      Width = 1088
+      Width = 1174
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 168
-      ClientWidth = 1088
+      ClientWidth = 1174
       TabOrder = 2
       object TrackBarAllSound: TTrackBar
         Left = 16
@@ -94,7 +94,7 @@ object FrameReadSentences: TFrameReadSentences
       end
       object RadioButton5: TRadioButton
         Tag = 5
-        Left = 616
+        Left = 416
         Height = 19
         Hint = 'Quote worthy'
         Top = 139
@@ -107,7 +107,7 @@ object FrameReadSentences: TFrameReadSentences
       end
       object RadioButton4: TRadioButton
         Tag = 4
-        Left = 584
+        Left = 384
         Height = 19
         Hint = 'Excellent for language learning'
         Top = 139
@@ -120,7 +120,7 @@ object FrameReadSentences: TFrameReadSentences
       end
       object RadioButton3: TRadioButton
         Tag = 3
-        Left = 552
+        Left = 352
         Height = 19
         Hint = 'Useful'
         Top = 139
@@ -133,7 +133,7 @@ object FrameReadSentences: TFrameReadSentences
       end
       object RadioButton2: TRadioButton
         Tag = 2
-        Left = 520
+        Left = 320
         Height = 19
         Hint = 'Not useful'
         Top = 139
@@ -146,7 +146,7 @@ object FrameReadSentences: TFrameReadSentences
       end
       object RadioButton1: TRadioButton
         Tag = 1
-        Left = 488
+        Left = 288
         Height = 19
         Hint = 'Too long, too complex or not interesting'
         Top = 139
@@ -158,9 +158,9 @@ object FrameReadSentences: TFrameReadSentences
         TabOrder = 2
       end
       object ButtonSplit: TButton
-        Left = 304
+        Left = 96
         Height = 25
-        Top = 133
+        Top = 134
         Width = 75
         Caption = 'Split'
         OnClick = ButtonSplitClick
@@ -168,7 +168,7 @@ object FrameReadSentences: TFrameReadSentences
         TabStop = False
       end
       object ButtonMerge: TButton
-        Left = 216
+        Left = 16
         Height = 25
         Top = 133
         Width = 75
@@ -450,7 +450,7 @@ object FrameReadSentences: TFrameReadSentences
         OnClick = ButtonPlayClick
       end
       object RadioButtonNone: TRadioButton
-        Left = 432
+        Left = 232
         Height = 19
         Top = 138
         Width = 47
@@ -459,15 +459,15 @@ object FrameReadSentences: TFrameReadSentences
         TabOrder = 1
       end
       object Button1: TButton
-        Left = 764
+        Left = 1080
         Height = 25
-        Top = 134
+        Top = 132
         Width = 75
         Caption = 'nxt'
         TabOrder = 11
       end
       object ButtonWaveForm: TButton
-        Left = 680
+        Left = 464
         Height = 25
         Top = 134
         Width = 75
@@ -475,19 +475,19 @@ object FrameReadSentences: TFrameReadSentences
         OnClick = ButtonWaveFormClick
         TabOrder = 12
       end
-      object Button2: TButton
-        Left = 856
+      object ButtonRepeatSettings: TButton
+        Left = 560
         Height = 25
         Top = 134
         Width = 75
         Caption = 'Rpt set'
-        OnClick = Button2Click
+        OnClick = ButtonRepeatSettingsClick
         TabOrder = 13
       end
       object Shape1: TShape
-        Left = 648
+        Left = 1032
         Height = 30
-        Top = 129
+        Top = 127
         Width = 30
         Brush.Color = clYellow
         Pen.Color = clSilver
@@ -495,13 +495,29 @@ object FrameReadSentences: TFrameReadSentences
         OnMouseDown = Shape1MouseDown
         Shape = stStar
       end
+      object EditSearch: TEdit
+        Left = 688
+        Height = 23
+        Top = 134
+        Width = 144
+        TabOrder = 14
+      end
+      object ButtonSearch: TButton
+        Left = 840
+        Height = 25
+        Top = 132
+        Width = 75
+        Caption = 'Search'
+        OnClick = ButtonSearchClick
+        TabOrder = 15
+      end
     end
   end
   object ListViewSentences: TListView
     Left = 0
     Height = 287
     Top = 170
-    Width = 1345
+    Width = 1418
     Align = alClient
     AutoSort = False
     Checkboxes = True
@@ -550,31 +566,42 @@ object FrameReadSentences: TFrameReadSentences
     Left = 0
     Height = 250
     Top = 464
-    Width = 1345
+    Width = 1418
     Align = alBottom
     BevelOuter = bvNone
     Caption = 'PanelSentencePair'
     ClientHeight = 250
-    ClientWidth = 1345
+    ClientWidth = 1418
     TabOrder = 2
     OnResize = Panel3Resize
     object PanelTranslation: TPanel
       Left = 0
       Height = 120
       Top = 0
-      Width = 1345
+      Width = 1418
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 120
-      ClientWidth = 1345
+      ClientWidth = 1418
       Color = clNavy
       ParentColor = False
       TabOrder = 0
-      object MemoTranslation: TMemo
-        Left = 26
+      object PanelLength: TPanel
+        Left = 0
         Height = 120
         Top = 0
-        Width = 1319
+        Width = 24
+        Align = alLeft
+        BevelOuter = bvNone
+        Color = 11796479
+        ParentColor = False
+        TabOrder = 0
+      end
+      object MemoTranslation: TMemo
+        Left = 24
+        Height = 120
+        Top = 0
+        Width = 1394
         Align = alClient
         Color = clNavy
         Font.CharSet = ANSI_CHARSET
@@ -588,51 +615,41 @@ object FrameReadSentences: TFrameReadSentences
         OnKeyUp = MemoTranslationKeyUp
         OnMouseUp = MemoMouseUp
         ParentFont = False
-        TabOrder = 0
-      end
-      object PanelLength: TPanel
-        Left = 0
-        Height = 120
-        Top = 0
-        Width = 26
-        Align = alLeft
-        BevelOuter = bvNone
-        ClientHeight = 120
-        ClientWidth = 26
-        Color = 11796479
-        ParentColor = False
         TabOrder = 1
-        object CheckBoxTranslation: TCheckBox
-          Left = 4
-          Height = 19
-          Top = 5
-          Width = 20
-          Checked = True
-          OnChange = CheckBoxTranslationChange
-          State = cbChecked
-          TabOrder = 0
-        end
       end
     end
-    object MemoSentence: TMemo
+    object PanelSentence: TPanel
       Left = 0
       Height = 130
       Top = 120
-      Width = 1345
+      Width = 1418
       Align = alBottom
+      BevelOuter = bvNone
+      ClientHeight = 130
+      ClientWidth = 1418
       Color = clNavy
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clWhite
-      Font.Height = -32
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      HideSelection = False
-      OnKeyUp = MemoTranslationKeyUp
-      OnMouseUp = MemoMouseUp
-      ParentFont = False
-      ReadOnly = True
+      ParentColor = False
       TabOrder = 1
+      object MemoSentence: TMemo
+        Left = 0
+        Height = 130
+        Top = 0
+        Width = 1418
+        Align = alClient
+        Color = clNavy
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clWhite
+        Font.Height = -32
+        Font.Name = 'Segoe UI'
+        Font.Pitch = fpVariable
+        Font.Quality = fqDraft
+        HideSelection = False
+        OnKeyUp = MemoTranslationKeyUp
+        OnMouseUp = MemoMouseUp
+        ParentFont = False
+        ReadOnly = True
+        TabOrder = 0
+      end
     end
   end
   object Splitter1: TSplitter
@@ -640,26 +657,14 @@ object FrameReadSentences: TFrameReadSentences
     Left = 0
     Height = 7
     Top = 457
-    Width = 1345
+    Width = 1418
     Align = alBottom
     ResizeAnchor = akBottom
   end
-  object TimerAllSound: TTimer
-    Interval = 100
-    OnTimer = TimerAllSoundTimer
-    Left = 768
-    Top = 58
-  end
-  object TimerRepeatAndNext: TTimer
-    Enabled = False
-    OnTimer = TimerRepeatAndNextTimer
-    Left = 656
-    Top = 58
-  end
-  object TimerLevel: TTimer
-    Interval = 20
-    OnTimer = TimerLevelTimer
-    Left = 880
-    Top = 58
+  object TimerState: TTimer
+    Interval = 50
+    OnTimer = TimerStateOnTimer
+    Left = 536
+    Top = 88
   end
 end

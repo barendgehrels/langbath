@@ -6,7 +6,7 @@ object FormRepeatSettings: TFormRepeatSettings
   Caption = 'Repeat Settings'
   ClientHeight = 349
   ClientWidth = 613
-  Constraints.MinHeight = 300
+  Constraints.MinHeight = 100
   Constraints.MinWidth = 500
   OnResize = FormResize
   LCLVersion = '2.0.10.0'
@@ -40,44 +40,14 @@ object FormRepeatSettings: TFormRepeatSettings
       TabOrder = 1
     end
   end
-  object CheckGroup1: TCheckGroup
+  object sb: TScrollBox
     Left = 0
     Height = 293
     Top = 0
-    Width = 300
-    Align = alLeft
-    AutoFill = True
-    Caption = 'Target'
-    ChildSizing.LeftRightSpacing = 6
-    ChildSizing.TopBottomSpacing = 6
-    ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
-    ChildSizing.EnlargeVertical = crsHomogenousChildResize
-    ChildSizing.ShrinkHorizontal = crsScaleChilds
-    ChildSizing.ShrinkVertical = crsScaleChilds
-    ChildSizing.Layout = cclTopToBottomThenLeftToRight
-    ChildSizing.ControlsPerLine = 1
-    ColumnLayout = clVerticalThenHorizontal
-    Columns = 3
-    TabOrder = 1
-  end
-  object CheckGroup2: TCheckGroup
-    Left = 300
-    Height = 293
-    Top = 0
-    Width = 313
+    Width = 613
+    HorzScrollBar.Page = 1
+    VertScrollBar.Page = 1
     Align = alClient
-    AutoFill = True
-    Caption = 'Translation'
-    ChildSizing.LeftRightSpacing = 6
-    ChildSizing.TopBottomSpacing = 6
-    ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
-    ChildSizing.EnlargeVertical = crsHomogenousChildResize
-    ChildSizing.ShrinkHorizontal = crsScaleChilds
-    ChildSizing.ShrinkVertical = crsScaleChilds
-    ChildSizing.Layout = cclTopToBottomThenLeftToRight
-    ChildSizing.ControlsPerLine = 1
-    ColumnLayout = clVerticalThenHorizontal
-    Columns = 3
-    TabOrder = 2
+    TabOrder = 1
   end
 end
