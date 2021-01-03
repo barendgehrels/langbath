@@ -664,7 +664,13 @@ object FrameReadSentences: TFrameReadSentences
   object TimerState: TTimer
     Interval = 50
     OnTimer = TimerStateOnTimer
-    Left = 536
-    Top = 88
+    Left = 552
+    Top = 80
+  end
+  object TimerRepeat: TTimer
+    Enabled = False
+    OnTimer = TimerRepeatTimer
+    Left = 632
+    Top = 80
   end
 end

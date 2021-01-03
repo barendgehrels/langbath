@@ -62,6 +62,7 @@ type
     RadioGroupPlay: TRadioGroup;
     Shape1: TShape;
     Splitter1: TSplitter;
+    TimerRepeat: TTimer;
     TimerState: TTimer;
     TrackBarAllSound: TTrackBar;
     procedure ButtonRepeatSettingsClick(Sender: TObject);
@@ -77,6 +78,7 @@ type
     procedure MemoTranslationChange(Sender: TObject);
     procedure MemoMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure TimerRepeatTimer(Sender: TObject);
     procedure TimerStateOnTimer(Sender: TObject);
     procedure Panel3Resize(Sender: TObject);
     procedure PanelTopResize(Sender: TObject);
@@ -97,11 +99,18 @@ type
 
     iRepeatSettings : TArrayOfRepeatSettings;
 
+    // Index of the sentence being repeated
     iRepeatSentenceIndex : integer;
+
+    // The number of repetitions
     iRepeatCount : integer;
 
-    function BassLoop(Sender: TObject; repeatIndex : integer) : boolean;
-    procedure BassLoopEnd(Sender: TObject);
+    // The current repetition
+    iRepeatIndex : integer;
+
+
+    iRepeatBeginSeconds : double;
+    iRepeatEndSeconds : double;
 
     procedure StopPlaying;
     procedure ShowMemos;
@@ -136,8 +145,8 @@ implementation
 uses LazUtf8, Math, lb_lib, lb_ui_lib, lb_form_wave_form;
 
 const
-  KSepRepeating : integer = 0;
-  KSepOne : integer = 1000;
+  KRepeatSeparationMilliseconds : integer = 500;
+  KPlaySeparationMilliseconds : integer = 2000;
 
 procedure ExtraLog(const s : string);
 begin
@@ -362,49 +371,56 @@ begin
   end;
 end;
 
-function TFrameReadSentences.BassLoop(Sender: TObject; repeatIndex : integer) : boolean;
+procedure TFrameReadSentences.TimerRepeatTimer(Sender: TObject);
 var item : TListItem;
+  nextIndex : integer;
 begin
-  result := false;
+  TimerRepeat.Enabled := false;
 
-  // At unselect, or selecting another sentence, looping stops
   item := ListViewSentences.selected;
-  if (item = nil) or (item.Index <> iRepeatSentenceIndex) then
+  if item = nil then
   begin
+    // At unselect, repeating stops
     iRepeatSentenceIndex := -1;
     StopPlaying;
     exit;
   end;
 
-  result := repeatIndex < iRepeatCount;
-  ProgressBarSentence.Position := repeatIndex * 1000;
-
-  ExtraLog(format('loop index=%d', [repeatIndex]));
-end;
-
-procedure TFrameReadSentences.BassLoopEnd(Sender: TObject);
-var item : TListItem;
-  nextIndex : integer;
-begin
-  item := ListViewSentences.selected;
-  if item = nil then exit;
-
-  // Move to next item if looping started at this item, otherwise restart at selected item
-  if item.Index = iRepeatSentenceIndex then nextIndex := item.Index + 1
-  else nextIndex := item.Index;
-
-  if nextIndex < ListViewSentences.Items.Count then
+  if item.Index <> iRepeatSentenceIndex then
   begin
-    ExtraLog(format('next idx=%d', [nextIndex]));
-
-    // Play next one
-    item := ListViewSentences.Items[nextIndex];
-    SelectAndShowListItem(item);
+    // At selecting another sentence, stop looping current, and play indicated
     PlaySentence(item);
+    exit;
+  end;
+
+  inc(iRepeatIndex);
+  if iRepeatIndex < iRepeatCount then
+  begin
+    // Play the same sentence again
+    iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds);
+    TimerRepeat.Enabled := true;
+    ProgressBarSentence.Position := iRepeatIndex * 1000;
+    ExtraLog(format('loop index=%d', [iRepeatIndex]));
   end
   else
   begin
-    StopPlaying;
+    // Play next sentence
+    if item.Index = iRepeatSentenceIndex then nextIndex := item.Index + 1
+    else nextIndex := item.Index;
+
+    if nextIndex < ListViewSentences.Items.Count then
+    begin
+      ExtraLog(format('next idx=%d', [nextIndex]));
+
+      // Play next one
+      item := ListViewSentences.Items[nextIndex];
+      SelectAndShowListItem(item);
+      PlaySentence(item);
+    end
+    else
+    begin
+      StopPlaying;
+    end;
   end;
 end;
 
@@ -604,7 +620,7 @@ procedure TFrameReadSentences.TimerStateOnTimer(Sender: TObject);
   end;
 
 var pos, loopFraction, level : double;
-  bassActive : boolean;
+  playing, bassActive : boolean;
 begin
   bassActive := iBass.GetReport(pos, loopFraction, level);
   if bassActive then
@@ -615,7 +631,7 @@ begin
 
     if RadioGroupPlay.ItemIndex >= 2 then
     begin
-      ProgressBarSentence.Position := trunc((iBass.iRepeatIndex + loopFraction) * 1000.0);
+      ProgressBarSentence.Position := trunc((iRepeatIndex + loopFraction) * 1000.0);
     end;
 
   end
@@ -624,11 +640,12 @@ begin
     ProgressBarLevel.Position := 0;
   end;
 
-  ButtonStop.Enabled := bassActive;
+  playing := bassActive or TimerRepeat.Enabled;
+  ButtonStop.Enabled := playing;
 
-  ButtonPlay.Enabled := not bassActive;
-  ButtonGoToCurrent.Enabled := not bassActive;
-  RadioGroupPlay.Enabled := not bassActive;
+  ButtonPlay.Enabled := not playing;
+  ButtonGoToCurrent.Enabled := not playing;
+  RadioGroupPlay.Enabled := not playing;
 end;
 
 procedure TFrameReadSentences.Panel3Resize(Sender: TObject);
@@ -683,6 +700,7 @@ begin
   if iBass <> nil then iBass.Stop;
   ProgressBarLevel.Position := 0;
   ProgressBarSentence.Position := 0;
+  TimerRepeat.Enabled := false;
 
   ShowMemos;
 end;
@@ -760,7 +778,7 @@ var levels : TArrayOfLevel;
   optimalPos : double;
 begin
   // Get levels around this position (take 5 seconds because pauzes might be long)
-  levels := iBass.GetSamples(pos - 2.5, pos + 2.5);
+  levels := iBass.GetLevels(pos - 2.5, pos + 2.5);
   if GetOptimalTime(details, levels, pos) then
   begin
     optimalPos := (details.posZeroBegin + details.posZeroEnd) / 2.0;
@@ -785,17 +803,18 @@ var showMemo, outOfRange : boolean;
 begin
   // Memo's are only hidden in repeating mode. In all other cases they are shown.
   showMemo := RadioGroupPlay.ItemIndex <> 2;
-  outOfRange := (iBass = nil) or (iBass.RepeatIndex < low(iRepeatSettings)) or (iBass.RepeatIndex > high(iRepeatSettings));
-  MemoSentence.Visible := showMemo or outOfRange or iRepeatSettings[iBass.RepeatIndex].showTarget;
-  MemoTranslation.Visible := showMemo or outOfRange or iRepeatSettings[iBass.RepeatIndex].showTranslation;
+  outOfRange := (iBass = nil) or (iRepeatIndex < low(iRepeatSettings)) or (iRepeatIndex > high(iRepeatSettings));
+  MemoSentence.Visible := showMemo or outOfRange or iRepeatSettings[iRepeatIndex].showTarget;
+  MemoTranslation.Visible := showMemo or outOfRange or iRepeatSettings[iRepeatIndex].showTranslation;
 end;
 
 procedure TFrameReadSentences.PlaySentence(item : TListItem);
-var
-  pos1, pos2 : double;
+var pos1, pos2 : double;
+  sep : integer;
 begin
   ShowMemos;
 
+  iRepeatIndex := 0;
   iRepeatSentenceIndex := -1;
   ProgressBarSentence.Position := 0;
 
@@ -804,10 +823,15 @@ begin
   and TryStrToFloat(item.SubItems[0], pos2)
   then
   begin
-    iBass.OnLoop := @BassLoop;
-    iBass.OnLoopEnd := @BassLoopEnd;
+    iRepeatBeginSeconds := pos1;
+    iRepeatEndSeconds := pos2;
 
-    iBass.LoopSelection(pos1, pos2);
+    if RadioGroupPlay.ItemIndex = 2 then sep := KRepeatSeparationMilliseconds
+    else sep := KPlaySeparationMilliseconds;
+
+    TimerRepeat.Interval := trunc(1000 * (pos2 - pos1)) + sep;
+    TimerRepeat.Enabled := true;
+    iBass.PlaySelection(pos1, pos2);
 
     iRepeatSentenceIndex := item.Index;
   end;

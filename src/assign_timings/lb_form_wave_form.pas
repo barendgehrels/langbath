@@ -150,7 +150,7 @@ begin
   iLevelMin := 0;
   iLevelMax := 1;
 
-  iLevels := iBass.GetSamples(iPosMin, iPosMax);
+  iLevels := iBass.GetLevels(iPosMin, iPosMax);
   GetExtremes;
   CalculateScale;
   PaintBoxWaveFormPaint(nil);

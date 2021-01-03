@@ -12,7 +12,7 @@ unit lb_time_optimizer;
 interface
 
 uses
-  Classes, SysUtils, lb_bass;
+  Classes, SysUtils, Math, lb_bass;
 
 type
   TDetailedLevelInfo = record
@@ -53,7 +53,7 @@ var i : integer;
   timeDiff, minTimeDiff : double;
 begin
   result := -1;
-  minTimeDiff := 1.0e10;
+  minTimeDiff := MaxDouble;
   for i := low(ar) to high(ar) do
   begin
     timeDiff := abs(aPosition - ar[i].positionSeconds);
