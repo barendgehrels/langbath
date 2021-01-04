@@ -30,14 +30,10 @@ type
   { TFrameReadSentences }
 
   TFrameReadSentences = class(TFrame)
-    Button1: TButton;
-    ButtonRepeatSettings: TButton;
-    ButtonSearch: TButton;
-    ButtonWaveForm: TButton;
+    ButtonPlay1: TSpeedButton;
+    ButtonSearch: TSpeedButton;
     ButtonGoToCurrent: TSpeedButton;
-    ButtonMerge: TButton;
     ButtonPlay: TSpeedButton;
-    ButtonSplit: TButton;
     ButtonStop: TSpeedButton;
     EditSearch: TEdit;
     EditRepeating: TEdit;
@@ -61,6 +57,12 @@ type
     RadioButtonNone: TRadioButton;
     RadioGroupPlay: TRadioGroup;
     Shape1: TShape;
+    ButtonWaveForm: TSpeedButton;
+    ButtonRepeatSettings: TSpeedButton;
+    ButtonMerge: TSpeedButton;
+    ButtonSplit: TSpeedButton;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
     Splitter1: TSplitter;
     TimerRepeat: TTimer;
     TimerState: TTimer;
@@ -113,6 +115,8 @@ type
     iRepeatEndSeconds : double;
 
     procedure StopPlaying;
+    function IsRepeating : boolean;
+    function GetRepeatSettings : TRepeatSettings;
     procedure ShowMemos;
     procedure PlaySentence(item : TListItem);
     procedure PlayFromCurrentSentence;
@@ -397,7 +401,7 @@ begin
   if iRepeatIndex < iRepeatCount then
   begin
     // Play the same sentence again
-    iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds);
+    if GetRepeatSettings.playAudio then iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds);
     TimerRepeat.Enabled := true;
     ProgressBarSentence.Position := iRepeatIndex * 1000;
     ExtraLog(format('loop index=%d', [iRepeatIndex]));
@@ -633,7 +637,6 @@ begin
     begin
       ProgressBarSentence.Position := trunc((iRepeatIndex + loopFraction) * 1000.0);
     end;
-
   end
   else
   begin
@@ -646,6 +649,8 @@ begin
   ButtonPlay.Enabled := not playing;
   ButtonGoToCurrent.Enabled := not playing;
   RadioGroupPlay.Enabled := not playing;
+
+  ShowMemos;
 end;
 
 procedure TFrameReadSentences.Panel3Resize(Sender: TObject);
@@ -671,13 +676,11 @@ begin
     0 : PlayFromCurrentSentence;
     1 : begin
           iEditTimes := true;
-          ShowMemos;
           PlayFromCurrentSentence;
         end;
     2 : if TryStrToInt(EditRepeating.Text, iRepeatCount) then
         begin
           ExtraLog('Play repeating');
-          ShowMemos;
 
           ProgressBarSentence.Max := iRepeatCount * 1000;
           ProgressBarSentence.Position := 0;
@@ -685,7 +688,6 @@ begin
           PlaySentence(ListViewSentences.Selected);
         end;
     3 : begin
-          ShowMemos;
           iRepeatCount := 0;
           ProgressBarSentence.Max := 1000;
           ProgressBarSentence.Position := 0;
@@ -701,8 +703,6 @@ begin
   ProgressBarLevel.Position := 0;
   ProgressBarSentence.Position := 0;
   TimerRepeat.Enabled := false;
-
-  ShowMemos;
 end;
 
 procedure TFrameReadSentences.ButtonStopClick(Sender: TObject);
@@ -798,22 +798,49 @@ begin
   end;
 end;
 
+function TFrameReadSentences.IsRepeating : boolean;
+begin
+  result := RadioGroupPlay.ItemIndex = 2;
+end;
+
+function TFrameReadSentences.GetRepeatSettings : TRepeatSettings;
+begin
+  if IsRepeating
+  and (iRepeatIndex >= low(iRepeatSettings))
+  and (iRepeatIndex <= high(iRepeatSettings))
+  then
+  begin
+    result := iRepeatSettings[iRepeatIndex];
+  end
+  else
+  begin
+    // If settings are out of range, enable all
+    result.playAudio := true;
+    result.showTarget := true;
+    result.showTranslation := true;
+  end;
+end;
+
 procedure TFrameReadSentences.ShowMemos;
-var showMemo, outOfRange : boolean;
+var showMemo : boolean;
+  settings : TRepeatSettings;
 begin
   // Memo's are only hidden in repeating mode. In all other cases they are shown.
-  showMemo := RadioGroupPlay.ItemIndex <> 2;
-  outOfRange := (iBass = nil) or (iRepeatIndex < low(iRepeatSettings)) or (iRepeatIndex > high(iRepeatSettings));
-  MemoSentence.Visible := showMemo or outOfRange or iRepeatSettings[iRepeatIndex].showTarget;
-  MemoTranslation.Visible := showMemo or outOfRange or iRepeatSettings[iRepeatIndex].showTranslation;
+  showMemo := not IsRepeating or not TimerRepeat.Enabled;
+
+  settings := GetRepeatSettings;
+
+  MemoSentence.Visible := showMemo or settings.showTarget;
+  MemoTranslation.Visible := showMemo or settings.showTranslation;
+
+  log(format('show index=%d target=%d trans=%d', [iRepeatIndex,
+    ord(MemoSentence.Visible), ord(MemoTranslation.Visible)]));
 end;
 
 procedure TFrameReadSentences.PlaySentence(item : TListItem);
 var pos1, pos2 : double;
   sep : integer;
 begin
-  ShowMemos;
-
   iRepeatIndex := 0;
   iRepeatSentenceIndex := -1;
   ProgressBarSentence.Position := 0;
@@ -826,12 +853,12 @@ begin
     iRepeatBeginSeconds := pos1;
     iRepeatEndSeconds := pos2;
 
-    if RadioGroupPlay.ItemIndex = 2 then sep := KRepeatSeparationMilliseconds
-    else sep := KPlaySeparationMilliseconds;
+    if IsRepeating then sep := KRepeatSeparationMilliseconds else sep := KPlaySeparationMilliseconds;
 
     TimerRepeat.Interval := trunc(1000 * (pos2 - pos1)) + sep;
     TimerRepeat.Enabled := true;
-    iBass.PlaySelection(pos1, pos2);
+
+    if GetRepeatSettings.playAudio then iBass.PlaySelection(pos1, pos2);
 
     iRepeatSentenceIndex := item.Index;
   end;
@@ -884,4 +911,13 @@ end.
 // Icons by:
 // https://freeicons.io/profile/3 (Icon King) [play, stop]
 // https://freeicons.io/profile/3277 (Gayrat Muminov) [align middle=go to edit]
+// https://freeicons.io/user-interface-and-electronics/arrow-down-download-line-items-interface-ui-c-a-b-fa-icon-815# (go to edit)
+// https://freeicons.io/documents-icons/icon-search-icon-7380# (search)
+// https://freeicons.io/media-icons/sound-wave-icon-37695# (sound wave)
+// https://freeicons.io/user-interface-4/interface-elements-ui-check-box-checkbox-todo-list-icon-43075# (repeat settings)
+// https://freeicons.io/black-arrow-icons-set/combine-merge-arrow-road-sign-black-icon-direction-way-path-indication-signal-mark-icon-53173# (merge)
+// https://freeicons.io/black-arrow-icons-set/arrows-down-down-sign-sign-black-icon-direction-way-path-indication-signal-mark-icon-53160# (split - rotated)
+
+// https://freeicons.io/business-and-online-icons/chevron-down-icon-icon#
+// https://freeicons.io/business-and-online-icons/chevron-up-icon-icon#
 
