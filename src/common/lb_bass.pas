@@ -59,6 +59,7 @@ type
     iPaused : boolean;
 
     function GetBassChannelInfo(channel : DWORD) : BASS_CHANNELINFO;
+    procedure CreateSample(timeBeginSeconds, timeEndSeconds : double; flags : DWORD);
 
   public
 
@@ -157,6 +158,7 @@ begin
   BASS_StreamFree(iChannel);
   BASS_StreamFree(iChannelOnlyDecode);
   BASS_StreamFree(iChannelSample);
+  BASS_SampleFree(iSample);
   inherited Destroy;
 end;
 
@@ -191,15 +193,56 @@ begin
   BASS_ChannelGetInfo(channel, result);
 end;
 
-
-procedure TLbBass.PlaySelection(timeBeginSeconds, timeEndSeconds : double; loop : boolean);
+procedure TLbBass.CreateSample(timeBeginSeconds, timeEndSeconds : double; flags : DWORD);
 const bufferSize = 10000;
 var memo : TMemoryStream;
   b1, b2 : QWORD;
-  flags, bytesRead : DWORD;
+  bytesRead : DWORD;
   buffer : array [1..bufferSize] of byte;
   info: BASS_CHANNELINFO;
 
+begin
+  if (CompareValue(iSampleBeginSeconds, timeBeginSeconds) = 0)
+  and (CompareValue(iSampleLengthSeconds, timeEndSeconds - timeBeginSeconds) = 0)
+  and (iSample > 0) then
+  begin
+    // No need to create the sample with the same information.
+    exit;
+  end;
+
+  BASS_SampleFree(iSample);
+  iSample := 0;
+
+  b1 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, timeBeginSeconds);
+  b2 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, timeEndSeconds);
+
+  info := GetBassChannelInfo(iChannelOnlyDecode);
+  BASS_ChannelSetPosition(iChannelOnlyDecode, b1, BASS_POS_BYTE);
+
+  memo := TMemoryStream.Create;
+  try
+    while (BASS_ChannelIsActive(iChannelOnlyDecode) = 1) and (b1 < b2) do
+    begin
+      bytesRead := BASS_ChannelGetData(iChannelOnlyDecode, @buffer, min(bufferSize, b2 - b1));
+      memo.Write(buffer, bytesRead);
+      inc(b1, bytesRead);
+    end;
+
+    iSample := BASS_SampleCreate(memo.size, info.freq, info.chans, 1, flags);
+    BASS_SampleSetData(iSample, memo.memory);
+
+    iSampleBeginSeconds := timeBeginSeconds;
+    iSampleLengthSeconds := timeEndSeconds - timeBeginSeconds;
+  finally
+    memo.Free;
+  end;
+
+  // TODO: This could be combined with code above too, because now it gets the same data again
+  iLoopSamples := GetLevels(timeBeginSeconds, timeEndSeconds);
+end;
+
+procedure TLbBass.PlaySelection(timeBeginSeconds, timeEndSeconds : double; loop : boolean);
+var flags : DWORD;
 begin
   if not iFileLoaded then exit;
 
@@ -211,49 +254,21 @@ begin
 
   if timeEndSeconds > timeBeginSeconds then
   begin
-    b1 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, timeBeginSeconds);
-    b2 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, timeEndSeconds);
+    CreateSample(timeBeginSeconds, timeEndSeconds, flags);
 
-    info := GetBassChannelInfo(iChannelOnlyDecode);
-    BASS_ChannelSetPosition(iChannelOnlyDecode, b1, BASS_POS_BYTE);
-
-    memo := TMemoryStream.Create;
-    try
-      while (BASS_ChannelIsActive(iChannelOnlyDecode) = 1) and (b1 < b2) do
-      begin
-        bytesRead := BASS_ChannelGetData(iChannelOnlyDecode, @buffer, min(bufferSize, b2 - b1));
-        memo.Write(buffer, bytesRead);
-        inc(b1, bytesRead);
-      end;
-
-      iSample := BASS_SampleCreate(memo.size, info.freq, info.chans, 1, flags);
-      BASS_SampleSetData(iSample, memo.memory);
-      iChannelSample := BASS_SampleGetChannel(iSample, true);
-      BASS_ChannelPlay(iChannelSample, true);
-
-      iSampleBeginSeconds := timeBeginSeconds;
-      iSampleLengthSeconds := timeEndSeconds - timeBeginSeconds;
-    finally
-      memo.Free;
-    end;
-
-    // TODO: This could be combined with code above too, because now it gets the same data again
-    iLoopSamples := GetLevels(timeBeginSeconds, timeEndSeconds);
+    // Get the channel (required for every repeat) and play the channel
+    iChannelSample := BASS_SampleGetChannel(iSample, true);
+    BASS_ChannelPlay(iChannelSample, true);
   end;
 end;
 
 procedure TLbBass.Stop;
 begin
-  iLoopSamples := [];
-
   if iFileLoaded then
   begin
     BASS_ChannelStop(iChannel);
     BASS_ChannelStop(iChannelSample);
   end;
-
-  BASS_SampleFree(iSample);
-  BASS_StreamFree(iChannelSample);
 end;
 
 function TLbBass.LengthSeconds : double;
