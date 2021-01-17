@@ -20,6 +20,9 @@ type
 
     iCurrentSentenceIndex : integer;
 
+    // If and how it should be repeated: in target language, translation, audio, etc.
+    iRepeatSettings : string;
+
     // ID (to save it and recognize it later, it should not change)
     iBookId : string;
 
@@ -35,7 +38,8 @@ type
 
 function DefaultBookSettings : TBookSettings;
 function ReadBookSettings(const ProjectId : string = '') : TBookSettings;
-procedure SaveBookSettings(const settings : TBookSettings; itemIndex : integer);
+procedure SaveBookSettings(const settings : TBookSettings; itemIndex : integer;
+      const repeatSettings : string);
 procedure SaveEditedBookSettings(const settings : TBookSettings);
 function ReadBookEntries : TStringList;
 function ReadSettingsToStringList(const ProjectId : string; items : TStrings) : integer;
@@ -68,6 +72,7 @@ const
   KEntrySrcSound : string = 'src.sound';
 
   KEntryCurrentSentence : string = 'sentence.current';
+  KEntryRepeatSettings : string = 'repeat.settings';
 
 function IniFileName : string;
 begin
@@ -107,6 +112,8 @@ begin
       section := KSection + '.' + result.iBookId;
       current := ini.ReadString(section, KEntryCurrentSentence, '');
       TryStrToInt(current, result.iCurrentSentenceIndex);
+
+      result.iRepeatSettings := ini.ReadString(section, KEntryRepeatSettings, '');;
 
       result.iAuthor := ini.ReadString(section, KEntryAuthor, '');
       result.iTitle := ini.ReadString(section, KEntryTitle, '');
@@ -158,7 +165,8 @@ begin
   end;
 end;
 
-procedure SaveBookSettings(const settings : TBookSettings; itemIndex : integer);
+procedure SaveBookSettings(const settings : TBookSettings; itemIndex : integer;
+    const repeatSettings : string);
 var ini : TIniFile;
   section : string;
 begin
@@ -176,6 +184,16 @@ begin
       begin
         ini.DeleteKey(section, KEntryCurrentSentence);
       end;
+
+      if repeatSettings <> '' then
+      begin
+        ini.WriteString(section, KEntryRepeatSettings, repeatSettings);
+      end
+      else
+      begin
+        ini.DeleteKey(section, KEntryRepeatSettings);
+      end;
+
     end;
 
     // Write general settings

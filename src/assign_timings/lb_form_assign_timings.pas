@@ -214,16 +214,12 @@ end;
 
 procedure TFormAssignTimes.SaveSettings;
 var item : TListItem;
+  sentenceIndex : integer;
 begin
   item := iFrameReadSentences.ListViewSentences.Selected;
-  if item <> nil then
-  begin
-    SaveBookSettings(iSettings, item.Index);
-  end
-  else
-  begin
-    SaveBookSettings(iSettings, -1);
-  end;
+  if item <> nil then sentenceIndex := item.Index else sentenceIndex := -1;
+
+  SaveBookSettings(iSettings, sentenceIndex, iFrameReadSentences.GetRepeatSettings);
 end;
 
 procedure TFormAssignTimes.CallSave;
@@ -236,21 +232,9 @@ begin
 end;
 
 procedure TFormAssignTimes.ShowCurrent;
-var item : TListItem;
-  sentenceIndex : integer;
 begin
-  sentenceIndex := iSettings.iCurrentSentenceIndex;
-  if sentenceIndex < 0 then sentenceIndex := 0;
-
-  if (sentenceIndex >= 0)
-  and (sentenceIndex < iFrameReadSentences.ListViewSentences.Items.Count)
-  then
-  begin
-    item := iFrameReadSentences.ListViewSentences.Items[sentenceIndex];
-    item.Selected := true;
-    item.Focused := true;
-    item.MakeVisible(false);
-  end
+  iFrameReadSentences.SelectAndShowListItem(iSettings.iCurrentSentenceIndex);
+  iFrameReadSentences.SetRepeatSettings(iSettings.iRepeatSettings);
 end;
 
 procedure TFormAssignTimes.FormShow(Sender: TObject);

@@ -40,9 +40,11 @@ begin
     delete(s, 1, p);
     p := pos(sep, s);
   end;
-  SetLength(result, n + 1);
-  result[n] := s;
-
+  if s <> '' then
+  begin
+    SetLength(result, n + 1);
+    result[n] := s;
+  end;
 end;
 
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;

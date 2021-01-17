@@ -59,7 +59,7 @@ type
     iPaused : boolean;
 
     function GetBassChannelInfo(channel : DWORD) : BASS_CHANNELINFO;
-    procedure CreateSample(timeBeginSeconds, timeEndSeconds : double; flags : DWORD);
+    procedure CreateSample(timeBeginSeconds, timeEndSeconds, timeFillStartSeconds : double; flags : DWORD);
 
   public
 
@@ -79,7 +79,9 @@ type
 
     // Play a selection (begin..end) of the specified soundfile,
     // using a sample
-    procedure PlaySelection(timeBeginSeconds, timeEndSeconds : double; loop : boolean = false);
+    procedure PlaySelection(timeBeginSeconds, timeEndSeconds : double;
+        timeFillStartSeconds : double = 0;
+        loop : boolean = false);
 
     // Stop playback (if active)
     procedure Stop;
@@ -193,7 +195,8 @@ begin
   BASS_ChannelGetInfo(channel, result);
 end;
 
-procedure TLbBass.CreateSample(timeBeginSeconds, timeEndSeconds : double; flags : DWORD);
+procedure TLbBass.CreateSample(timeBeginSeconds, timeEndSeconds, timeFillStartSeconds : double;
+    flags : DWORD);
 const bufferSize = 10000;
 var memo : TMemoryStream;
   b1, b2 : QWORD;
@@ -221,6 +224,12 @@ begin
 
   memo := TMemoryStream.Create;
   try
+
+    // Optionally add a bit of space at the start,
+    // because, for example, on Linux, on VirtualBox, the start is often omitted
+    fillchar(buffer, bufferSize, #0);
+    memo.Write(buffer, min(bufferSize, trunc(timeFillStartSeconds * info.freq)));
+
     while (BASS_ChannelIsActive(iChannelOnlyDecode) = 1) and (b1 < b2) do
     begin
       bytesRead := BASS_ChannelGetData(iChannelOnlyDecode, @buffer, min(bufferSize, b2 - b1));
@@ -241,7 +250,8 @@ begin
   iLoopSamples := GetLevels(timeBeginSeconds, timeEndSeconds);
 end;
 
-procedure TLbBass.PlaySelection(timeBeginSeconds, timeEndSeconds : double; loop : boolean);
+procedure TLbBass.PlaySelection(timeBeginSeconds, timeEndSeconds : double;
+    timeFillStartSeconds : double; loop : boolean);
 var flags : DWORD;
 begin
   if not iFileLoaded then exit;
@@ -250,11 +260,12 @@ begin
 
   if timeBeginSeconds < 0 then timeBeginSeconds := 0;
   if timeEndSeconds < 0 then timeEndSeconds := LengthSeconds;
+  if timeFillStartSeconds > 1 then timeFillStartSeconds := 1.0;
   if loop then flags := BASS_SAMPLE_LOOP else flags := 0;
 
   if timeEndSeconds > timeBeginSeconds then
   begin
-    CreateSample(timeBeginSeconds, timeEndSeconds, flags);
+    CreateSample(timeBeginSeconds, timeEndSeconds, timeFillStartSeconds, flags);
 
     // Get the channel (required for every repeat) and play the channel
     iChannelSample := BASS_SampleGetChannel(iSample, true);

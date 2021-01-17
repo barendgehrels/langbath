@@ -5,24 +5,14 @@ unit lb_form_repeat_settings;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, lb_repeat_settings;
 
 type
-
-  TRepeatSettings = record
-    showTarget : boolean;
-    showTranslation : boolean;
-    playAudio : boolean;
-  end;
-
-  TArrayOfRepeatSettings = array of TRepeatSettings;
 
   TControlPanel = record
     panel : tpanel;
     checkBoxShowTarget, checkBoxShowTranslation, checkBoxPlayAudio : TChecKBox;
   end;
-
-  { TFormRepeatSettings }
 
   TFormRepeatSettings = class(TForm)
     ButtonCancel: TButton;
@@ -136,7 +126,7 @@ begin
   begin
     if i <= high(iControlPanels) then
     begin
-      iControlPanels[i].checkBoxShowTarget.Checked := ar[i].showTarget;
+      iControlPanels[i].checkBoxShowTarget.Checked := ar[i].showOriginal;
       iControlPanels[i].checkBoxShowTranslation.Checked := ar[i].showTranslation;
       iControlPanels[i].checkBoxPlayAudio.Checked := ar[i].playAudio;
     end;
@@ -182,7 +172,7 @@ begin
   end;
   for i := low(iControlPanels) to high(iControlPanels) do
   begin
-    ar[i].showTarget := iControlPanels[i].checkBoxShowTarget.Checked;
+    ar[i].showOriginal := iControlPanels[i].checkBoxShowTarget.Checked;
     ar[i].showTranslation := iControlPanels[i].checkBoxShowTranslation.Checked;
     ar[i].playAudio := iControlPanels[i].checkBoxPlayAudio.Checked;
   end;

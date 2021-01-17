@@ -23,13 +23,14 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls,
-  ExtCtrls, Buttons, lb_bass, lb_time_optimizer, lb_form_repeat_settings, LCLType;
+  ExtCtrls, Buttons, lb_bass, lb_time_optimizer, lb_repeat_settings, LCLType;
 
 type
 
   { TFrameReadSentences }
 
   TFrameReadSentences = class(TFrame)
+    ButtonPaste: TSpeedButton;
     ButtonPlay1: TSpeedButton;
     ButtonSearch: TSpeedButton;
     ButtonGoToCurrent: TSpeedButton;
@@ -63,10 +64,12 @@ type
     ButtonSplit: TSpeedButton;
     SpeedButton1: TSpeedButton;
     SpeedButton2: TSpeedButton;
+    ButtonCopy: TSpeedButton;
     Splitter1: TSplitter;
     TimerRepeat: TTimer;
     TimerState: TTimer;
     TrackBarAllSound: TTrackBar;
+    procedure ButtonPasteClick(Sender: TObject);
     procedure ButtonRepeatSettingsClick(Sender: TObject);
     procedure ButtonSearchClick(Sender: TObject);
     procedure ButtonSplitClick(Sender: TObject);
@@ -80,6 +83,7 @@ type
     procedure MemoTranslationChange(Sender: TObject);
     procedure MemoMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure ButtonCopyClick(Sender: TObject);
     procedure TimerRepeatTimer(Sender: TObject);
     procedure TimerStateOnTimer(Sender: TObject);
     procedure Panel3Resize(Sender: TObject);
@@ -116,13 +120,16 @@ type
 
     procedure StopPlaying;
     function IsRepeating : boolean;
-    function GetRepeatSettings : TRepeatSettings;
+    function GetCurrentRepeatSettings : TRepeatSettings;
     procedure ShowMemos;
     procedure PlaySentence(item : TListItem);
     procedure PlayFromCurrentSentence;
 
     function IsSplitEnabled : boolean;
     procedure SelectItem(item : TListItem; selected : Boolean);
+
+    function SelectionAsStringList(index : integer) : TStringList;
+    procedure DoPaste;
 
     procedure AssignPeriod(item : TListItem; isBegin : boolean; pos : double);
     procedure SampleAssignPeriod(item : TListItem; isBegin : boolean; pos : double);
@@ -137,6 +144,10 @@ type
     destructor Destroy; override;
 
     procedure ReadSound(const filename : string);
+    procedure SelectAndShowListItem(index : integer);
+
+    function GetRepeatSettings : string;
+    procedure SetRepeatSettings(const settings : string);
 
     property TimesDirty : boolean read iTimesDirty write SetTimesDirty;
     property SentencesDirty : boolean read iSentencesDirty write SetSentencesDirty;
@@ -146,11 +157,13 @@ implementation
 
 {$R *.lfm}
 
-uses LazUtf8, Math, lb_lib, lb_ui_lib, lb_form_wave_form;
+uses ClipBrd, LazUtf8, Math,
+  lb_lib, lb_ui_lib, lb_form_wave_form, lb_form_paste, lb_form_repeat_settings;
 
 const
   KRepeatSeparationMilliseconds : integer = 500;
   KPlaySeparationMilliseconds : integer = 2000;
+  KFillStartSeconds : double = 0.2;
 
 procedure ExtraLog(const s : string);
 begin
@@ -195,6 +208,15 @@ begin
 
   // The list can loose the focus, refocus
   if hasFocus then ListViewSentences.SetFocus;
+end;
+
+procedure TFrameReadSentences.SelectAndShowListItem(index : integer);
+begin
+  if index < 0 then index := 0;
+  if index < ListViewSentences.Items.Count then
+  begin
+    SelectAndShowListItem(ListViewSentences.Items[index]);
+  end
 end;
 
 procedure TFrameReadSentences.ButtonGoToEditPlaceClick(Sender: TObject);
@@ -401,7 +423,10 @@ begin
   if iRepeatIndex < iRepeatCount then
   begin
     // Play the same sentence again
-    if GetRepeatSettings.playAudio then iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds);
+    if GetCurrentRepeatSettings.playAudio then
+    begin
+      iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds, KFillStartSeconds);
+    end;
     TimerRepeat.Enabled := true;
     ProgressBarSentence.Position := iRepeatIndex * 1000;
     ExtraLog(format('loop index=%d', [iRepeatIndex]));
@@ -607,6 +632,72 @@ begin
   ButtonSplit.Enabled := IsSplitEnabled;
 end;
 
+function TFrameReadSentences.SelectionAsStringList(index : integer) : TStringList;
+var item : TListItem;
+begin
+  result := TStringList.Create;
+  item := ListViewSentences.Selected;
+  while item <> nil do
+  begin
+    result.Add(item.SubItems[index]);
+    item := ListViewSentences.GetNextItem(item, sdBelow, [lisSelected]);
+  end;
+end;
+
+procedure TFrameReadSentences.ButtonCopyClick(Sender: TObject);
+var list : TStringList;
+begin
+  list := SelectionAsStringList(1);
+  try
+    ClipBoard.AsText := list.Text;
+  finally
+    list.free;
+  end;
+end;
+
+procedure TFrameReadSentences.ButtonPasteClick(Sender: TObject);
+var c : integer;
+  list : TStrings;
+begin
+  c := FormPaste.ClipboardLineCount;
+  if c <> ListViewSentences.SelCount then
+  begin
+    ShowMessage('Clipboard does not correspond to selected items');
+    exit;
+  end;
+
+  list := SelectionAsStringList(2);
+  try
+    FormPaste.SetCurrentTranslation(list);
+  finally
+    list.free;
+  end;
+
+  FormPaste.Paste;
+  FormPaste.ShowModal;
+  if FormPaste.ModalResult = mrOK then
+  begin
+    DoPaste;
+  end;
+end;
+
+procedure TFrameReadSentences.DoPaste;
+var item : TListItem;
+  list : TStrings;
+  i : integer;
+begin
+  list := FormPaste.GetNewTranslation;
+  item := ListViewSentences.Selected;
+  i := 0;
+  while (item <> nil) and (i < list.count) do
+  begin
+    AddMinimal(item, 3);
+    item.SubItems[2] := list[i];
+    item := ListViewSentences.GetNextItem(item, sdBelow, [lisSelected]);
+    inc(i);
+  end;
+end;
+
 procedure TFrameReadSentences.TimerStateOnTimer(Sender: TObject);
   function log10(v : double): double;
   begin
@@ -803,7 +894,7 @@ begin
   result := RadioGroupPlay.ItemIndex = 2;
 end;
 
-function TFrameReadSentences.GetRepeatSettings : TRepeatSettings;
+function TFrameReadSentences.GetCurrentRepeatSettings : TRepeatSettings;
 begin
   if IsRepeating
   and (iRepeatIndex >= low(iRepeatSettings))
@@ -816,7 +907,7 @@ begin
   begin
     // If settings are out of range, enable all
     result.playAudio := true;
-    result.showTarget := true;
+    result.showOriginal := true;
     result.showTranslation := true;
   end;
 end;
@@ -828,12 +919,12 @@ begin
   // Memo's are only hidden in repeating mode. In all other cases they are shown.
   showMemo := not IsRepeating or not TimerRepeat.Enabled;
 
-  settings := GetRepeatSettings;
+  settings := GetCurrentRepeatSettings;
 
-  MemoSentence.Visible := showMemo or settings.showTarget;
+  MemoSentence.Visible := showMemo or settings.showOriginal;
   MemoTranslation.Visible := showMemo or settings.showTranslation;
 
-  log(format('show index=%d target=%d trans=%d', [iRepeatIndex,
+  ExtraLog(format('show index=%d target=%d trans=%d', [iRepeatIndex,
     ord(MemoSentence.Visible), ord(MemoTranslation.Visible)]));
 end;
 
@@ -855,11 +946,16 @@ begin
 
     if IsRepeating then sep := KRepeatSeparationMilliseconds else sep := KPlaySeparationMilliseconds;
 
+    // The sample will have a bit of extra space at the start
+    sep := sep + trunc(KFillStartSeconds * 1000);
+
     TimerRepeat.Interval := trunc(1000 * (pos2 - pos1)) + sep;
     TimerRepeat.Enabled := true;
 
-    if GetRepeatSettings.playAudio then iBass.PlaySelection(pos1, pos2);
-
+    if GetCurrentRepeatSettings.playAudio then
+    begin
+      iBass.PlaySelection(pos1, pos2, KFillStartSeconds);
+    end;
     iRepeatSentenceIndex := item.Index;
   end;
 end;
@@ -906,6 +1002,22 @@ begin
   IndicateDirty(3, v, 'Translation');
 end;
 
+function TFrameReadSentences.GetRepeatSettings: string;
+begin
+  result := RepeatSettingsAsString(iRepeatSettings);
+end;
+
+procedure TFrameReadSentences.SetRepeatSettings(const settings : string);
+var len : integer;
+begin
+  iRepeatSettings := StringAsArrayOfRepeatSettings(settings);
+  len := length(iRepeatSettings);
+  if len >= 2 then
+  begin
+    EditRepeating.Text := inttostr(len);
+  end;
+end;
+
 end.
 
 // Icons by:
@@ -920,4 +1032,6 @@ end.
 
 // https://freeicons.io/business-and-online-icons/chevron-down-icon-icon#
 // https://freeicons.io/business-and-online-icons/chevron-up-icon-icon#
+// https://freeicons.io/common-style-icons-20/copy-icon-19498#
+// https://freeicons.io/ui-essentials-3/ui-essentials-paste-icon-44565#
 
