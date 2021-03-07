@@ -126,6 +126,8 @@ begin
       result.iSrcTarget := ini.ReadString(section, KEntrySrcTarget, '');
       result.iSrcTranslation := ini.ReadString(section, KEntrySrcTranslation, '');
       result.iSrcSound  := ini.ReadString(section, KEntrySrcSound, '');
+
+      result.iLanguage  := ini.ReadString(section, KEntryLanguageTarget, '');
     end;
 
   finally

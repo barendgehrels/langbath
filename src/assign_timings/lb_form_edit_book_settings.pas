@@ -20,8 +20,6 @@ uses
 
 type
 
-  { TFormEditBookSettings }
-
   TFormEditBookSettings = class(TForm)
     ButtonCancel: TButton;
     ButtonOk: TButton;
@@ -78,8 +76,6 @@ var
 implementation
 
 {$R *.lfm}
-
-{ TFormEditBookSettings }
 
 procedure TFormEditBookSettings.Select(edit : TEdit; isText, mustExist : boolean);
 

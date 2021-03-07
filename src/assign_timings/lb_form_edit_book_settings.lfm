@@ -4,7 +4,7 @@ object FormEditBookSettings: TFormEditBookSettings
   Top = 239
   Width = 917
   BorderIcons = [biSystemMenu]
-  Caption = 'Add file'
+  Caption = 'Edit book settings'
   ClientHeight = 507
   ClientWidth = 917
   Constraints.MinHeight = 500

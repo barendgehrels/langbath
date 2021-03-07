@@ -213,6 +213,10 @@ begin
     exit;
   end;
 
+  // Don't sample longer than a minute
+  if timeEndSeconds - timeBeginSeconds > 60 then exit;
+
+
   BASS_SampleFree(iSample);
   iSample := 0;
 
@@ -392,6 +396,10 @@ var b1, b2 : QWORD;
   pos : double;
   n : integer;
 begin
+
+  // Don't sample longer than a minute
+  if p2 - p1 > 60 then exit;
+
   result := [];
   n := 0;
   if iFileLoaded and iEnableGetLevels and (iChannelOnlyDecode > 0) then

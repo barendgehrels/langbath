@@ -68,13 +68,25 @@ procedure WriteColumnFromListView(ListView : TListView; colIndex : integer; cons
 var list : TStringList;
   i : integer;
   item : TListItem;
+  s : string;
 begin
   list := TStringList.Create;
   try
     for i := 0 to ListView.Items.Count - 1 do
     begin
       item := ListView.Items[i];
-      if colIndex < item.SubItems.Count then list.Append(item.SubItems[colIndex])
+      if colIndex < item.SubItems.Count then
+      begin
+        s := item.SubItems[colIndex];
+        // Avoid any CR/LF because that destroys synchronization
+        // (users might paste it, for example)
+        s := StringReplace(s, #10, '', [rfReplaceAll]);
+        s := StringReplace(s, #13, ' ', [rfReplaceAll]);
+        // Avoid any TAB because our files are TAB separated (though this file isn't)
+        s := StringReplace(s, #9, ' ', [rfReplaceAll]);
+
+        list.Append(trim(s));
+      end
       else list.Append('');
     end;
 

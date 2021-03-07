@@ -183,9 +183,12 @@ end;
 
 procedure TFormAssignTimes.ReadContents;
 begin
-  ReadTargetIntoListView(iFrameReadSentences.ListViewSentences, iSettings.iFilenameTarget);
-  ReadTimingsIntoListView(iFrameReadSentences.ListViewSentences, iSettings.iFilenameTimings);
-  ReadTranslationIntoListView(iFrameReadSentences.ListViewSentences, iSettings.iFilenameTranslation);
+  ReadTargetIntoListView(iFrameReadSentences.ListViewSentences,
+      iSettings.iFilenameTarget, KColumnTarget);
+  ReadTranslationIntoListView(iFrameReadSentences.ListViewSentences,
+      iSettings.iFilenameTranslation, KColumnTranslation);
+  ReadTimingsIntoListView(iFrameReadSentences.ListViewSentences,
+      iSettings.iFilenameTimings, KColumnRating);
   iFrameReadSentences.ReadSound(iSettings.iFilenameSound);
   iFrameReadSentences.TimesDirty := false;
   iFrameReadSentences.SentencesDirty := false;

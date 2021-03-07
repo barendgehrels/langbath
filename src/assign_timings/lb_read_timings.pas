@@ -14,9 +14,12 @@ interface
 uses
   Classes, SysUtils, ComCtrls;
 
-procedure ReadTargetIntoListView(listView : TListView; const filename : string);
-procedure ReadTranslationIntoListView(listView : TListView; const filename : string);
-procedure ReadTimingsIntoListView(listView : TListView; const filename : string);
+procedure ReadTargetIntoListView(listView : TListView;
+    const filename : string; subItemIndex : integer);
+procedure ReadTranslationIntoListView(listView : TListView;
+    const filename : string; subItemIndex : integer);
+procedure ReadTimingsIntoListView(listView : TListView;
+    const filename : string; ratingSubItemIndex : integer);
 
 implementation
 
@@ -24,11 +27,11 @@ uses lb_lib, lb_ui_lib;
 
 const KTimeSeparator : char = #9;
 
-procedure ReadTargetIntoListView(listView : TListView; const filename : string);
+procedure ReadFileIntoListView(listView : TListView;
+    const filename : string; subItemIndex : integer; clear : boolean);
 var list : TStringList;
   k : integer;
-  it : TListItem;
-  sentence : string;
+  item : TListItem;
 begin
   if not FileExists(filename) then exit;
 
@@ -38,14 +41,15 @@ begin
   try
     list.LoadFromFile(filename);
 
-    listView.Items.Clear;
+    if clear then listView.Items.Clear;
+
     for k := 0 to list.count - 1 do
     begin
-      sentence := list[k];
-      it := listView.Items.Add;
-      it.Caption := ''; // begin time
-      it.SubItems.add(''); // end time
-      it.SubItems.add(sentence);
+      if k >= listView.Items.Count then item := listView.Items.Add
+      else item := listView.Items[k];
+
+      SetMinimumSubItems(item, subItemIndex + 1);
+      item.SubItems[subItemIndex] := list[k];
     end;
 
   finally
@@ -54,42 +58,21 @@ begin
   end;
 end;
 
-procedure ReadTranslationIntoListView(listView : TListView; const filename : string);
-var list : TStringList;
-  k : integer;
-  it : TListItem;
+
+procedure ReadTargetIntoListView(listView : TListView;
+    const filename : string; subItemIndex : integer);
 begin
-  if not FileExists(filename) then exit;
-
-  listView.Items.BeginUpdate;
-  list := TStringList.Create;
-
-  try
-    list.LoadFromFile(filename);
-
-    for k := 0 to list.count - 1 do
-    begin
-      if k < listView.Items.count then it := listView.Items[k] else it := nil;
-      if it <> nil then
-      begin
-        if it.SubItems.Count > 2 then
-        begin
-          it.SubItems[2] := list[k];
-        end
-        else
-        begin
-          it.SubItems.Add(list[k]);
-        end;
-      end;
-    end;
-
-  finally
-    listView.Items.EndUpdate;
-    list.free;
-  end;
+  ReadFileIntoListView(listView, filename, subItemIndex, true);
 end;
 
-procedure ReadTimingsIntoListView(listView : TListView; const filename : string);
+procedure ReadTranslationIntoListView(listView : TListView;
+    const filename : string; subItemIndex : integer);
+begin
+  ReadFileIntoListView(listView, filename, subItemIndex, false);
+end;
+
+procedure ReadTimingsIntoListView(listView : TListView;
+    const filename : string; ratingSubItemIndex : integer);
 var list : TStringList;
   k : integer;
   item : TListItem;
@@ -114,18 +97,22 @@ begin
 
         if length(fields) >= 2 then
         begin
-          AddMinimal(item, 1);
+          SetMinimumSubItems(item, 1);
+
           item.Caption := trim(fields[0]);
           item.SubItems[0] := trim(fields[1]);
+
           item.Checked := (item.Caption <> '') and (item.SubItems[0] <> '');
           if length(fields) >= 3 then
           begin
-            AddMinimal(item, 4);
-            item.SubItems[3] := trim(fields[2]);
+            SetMinimumSubItems(item, ratingSubItemIndex + 1);
+            item.SubItems[ratingSubItemIndex] := trim(fields[2]);
           end;
         end;
       end;
     end;
+
+    while RemoveItemIfEmpty(listView) do ;
 
   finally
     listView.Items.EndUpdate;

@@ -50,6 +50,8 @@ end;
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
 var ar : TArrayOfString;
 begin
+  result := false;
+
   a := 0;
   b := 0;
   r := 0;

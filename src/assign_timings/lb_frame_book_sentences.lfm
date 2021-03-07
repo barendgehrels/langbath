@@ -495,9 +495,9 @@ object FrameReadSentences: TFrameReadSentences
         TabOrder = 1
       end
       object Shape1: TShape
-        Left = 1032
+        Left = 1136
         Height = 30
-        Top = 127
+        Top = 125
         Width = 30
         Brush.Color = clYellow
         Pen.Color = clSilver
@@ -713,7 +713,7 @@ object FrameReadSentences: TFrameReadSentences
         OnClick = ButtonWaveFormClick
       end
       object ButtonRepeatSettings: TSpeedButton
-        Left = 408
+        Left = 400
         Height = 36
         Top = 124
         Width = 36
@@ -993,7 +993,7 @@ object FrameReadSentences: TFrameReadSentences
       object ButtonSplit: TSpeedButton
         Left = 56
         Height = 36
-        Top = 124
+        Top = 123
         Width = 36
         Glyph.Data = {
           36100000424D3610000000000000360000002800000020000000200000000100
@@ -1294,7 +1294,7 @@ object FrameReadSentences: TFrameReadSentences
         }
       end
       object ButtonCopy: TSpeedButton
-        Left = 456
+        Left = 440
         Height = 36
         Hint = 'Copy original sentence'
         Top = 124
@@ -1380,10 +1380,10 @@ object FrameReadSentences: TFrameReadSentences
         ParentShowHint = False
       end
       object ButtonPaste: TSpeedButton
-        Left = 504
+        Left = 536
         Height = 36
         Hint = 'Paste translation'
-        Top = 124
+        Top = 123
         Width = 36
         Glyph.Data = {
           36090000424D3609000000000000360000002800000018000000180000000100
@@ -1465,6 +1465,32 @@ object FrameReadSentences: TFrameReadSentences
         ShowHint = True
         ParentShowHint = False
       end
+      object CheckBoxCopyMany: TCheckBox
+        Left = 480
+        Height = 19
+        Top = 141
+        Width = 50
+        Caption = 'many'
+        TabOrder = 10
+      end
+      object ButtonSplitTarget: TButton
+        Left = 912
+        Height = 25
+        Top = 130
+        Width = 88
+        Caption = 'Split target'
+        OnClick = ButtonSplitTargetClick
+        TabOrder = 11
+      end
+      object ButtonSplitTranslation: TButton
+        Left = 1016
+        Height = 25
+        Top = 131
+        Width = 96
+        Caption = 'Split translation'
+        OnClick = ButtonSplitTranslationClick
+        TabOrder = 12
+      end
     end
   end
   object ListViewSentences: TListView
@@ -1544,18 +1570,31 @@ object FrameReadSentences: TFrameReadSentences
         Left = 0
         Height = 120
         Top = 0
-        Width = 24
+        Width = 32
         Align = alLeft
         BevelOuter = bvNone
+        ClientHeight = 120
+        ClientWidth = 32
         Color = 11796479
         ParentColor = False
         TabOrder = 0
+        object LabelLength: TLabel
+          Left = 3
+          Height = 15
+          Top = 102
+          Width = 26
+          Align = alBottom
+          AutoSize = False
+          BorderSpacing.Around = 3
+          Caption = '-'
+          ParentColor = False
+        end
       end
       object MemoTranslation: TMemo
-        Left = 24
+        Left = 32
         Height = 120
         Top = 0
-        Width = 1394
+        Width = 1386
         Align = alClient
         Color = clNavy
         Font.CharSet = ANSI_CHARSET
