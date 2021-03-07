@@ -10,28 +10,7 @@ program html_tables_to_json;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, SysUtils, FpJson, JsonParser, lb_html_tables_to_json;
-
-function TextFileAsString(const filename : string) : string;
-var txt : TextFile;
-  s : string;
-begin
-  result := '';
-
-  AssignFile(txt, filename);
-  {$I-} Reset(txt); {$I+}
-  if IOResult <> 0 then exit;
-
-  try
-    while not eof(txt)  do
-    begin
-      ReadLn(txt, s);
-      result := result + s;
-    end;
-  finally
-    CloseFile(txt);
-  end;
-end;
+  Classes, SysUtils, FpJson, JsonParser, lb_html_tables_to_json, lib_file_lib;
 
 procedure JsonVerify(const jsonFilename : string);
 
@@ -110,7 +89,8 @@ begin
 end;
 
 var error, verify : boolean;
-  inputFilename, outputFilename : string;
+  url, inputFilename, outputFilename : string;
+  useUrl : boolean;
 begin
   if (paramCount = 1) and (paramstr(1) = 'sample') then
   begin
@@ -120,29 +100,60 @@ begin
 
   if ParamCount < 2 then
   begin
-    writeln('Usage: ' + ParamStr(0) + ' [input html file] [output json file] {verify}');
+    writeln('Usage: ' + ParamStr(0) + ' [input html file/url] [output json file] {verify}');
     halt;
   end;
 
   error := false;
   inputFilename := Paramstr(1);
   outputFilename := Paramstr(2);
+  useUrl := IsUrl(inputFilename);
 
-  if not FileExists(inputFilename) then
+  // Use the first parameter as either a URL or a filename
+  if not useUrl and not FileExists(inputFilename) then
   begin
     error := true;
     writeln('File not found: ' + inputFilename);
   end;
+
   if FileExists(outputFilename) then
   begin
     error := true;
-    writeln('File already exists: ' + outputFilename);
+    writeln('JSON file already exists: ' + outputFilename);
+  end;
+
+  if not error and useUrl then
+  begin
+    url := inputFilename;
+    inputFilename := GetTempFileName(GetTempDir, 'lb') + '.html';
+
+    if not DownloadHtmlToFile(url, inputFilename)
+    or not FileExists(inputFilename) then
+    begin
+      writeln('Cannot download ', url);
+      error := true;
+    end
+    else
+    begin
+      writeln('Downloaded ', url, ' to temporary file ', inputFilename);
+    end;
   end;
 
   if not error then
   begin
     verify := (ParamCount >= 3) and (paramstr(3) = 'verify');
     ConvertHtmlTablesToJson(inputFileName, outputFileName, verify);
+  end;
+
+  // Remove the URL downloaded earlier.
+  // Defensive check if it is in the temp folder
+  if useUrl
+  and inputFilename.StartsWith(GetTempDir)
+  and FileExists(inputFilename)
+  then
+  begin
+    writeln('Deleting temporary file ', inputFilename);
+    DeleteFile(inputFilename);
   end;
 end.
 
