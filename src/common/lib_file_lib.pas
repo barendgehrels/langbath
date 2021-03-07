@@ -1,3 +1,10 @@
+// Language Bath - File Library
+// Copyright (c) 2021 Barend Gehrels, Amsterdam, the Netherlands.
+// Use, modification and distribution is subject to the MIT License
+// https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
+
+// Code in this unit contains common functionality for files / urls
+
 unit lib_file_lib;
 
 {$mode objfpc}{$H+}
