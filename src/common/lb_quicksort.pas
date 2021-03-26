@@ -1,7 +1,7 @@
 // Language Bath - Sort/search library
 // Copyright (c) 2020-2021 Barend Gehrels, Amsterdam, the Netherlands.
 // Use, modification and distribution is subject to the MIT License
-// https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
+// https://raw.githubusercontent.com/barendgehrels/langbath/main/src/LICENSE
 
 // Code in this unit implements generic quicksort and binary search functionality
 

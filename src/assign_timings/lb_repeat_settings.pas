@@ -52,9 +52,18 @@ end;
 
 function StringAsRepeatSettings(const s : string) : TRepeatSettings;
 begin
-  result.showOriginal := pos('o', s) > 0;
-  result.showTranslation  := pos('t', s) > 0;
-  result.playAudio := pos('a', s) > 0;
+  if s = '' then
+  begin
+    result.ShowOriginal := true;
+    result.showTranslation := true;
+    result.playAudio := true;
+  end
+  else
+  begin
+    result.showOriginal := pos('o', s) > 0;
+    result.showTranslation  := pos('t', s) > 0;
+    result.playAudio := pos('a', s) > 0;
+  end;
 end;
 
 function StringAsArrayOfRepeatSettings(const s : string) : TArrayOfRepeatSettings;

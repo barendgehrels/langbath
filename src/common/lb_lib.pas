@@ -1,7 +1,7 @@
 // Language Bath - Common
 // Copyright (c) 2020 Barend Gehrels, Amsterdam, the Netherlands.
 // Use, modification and distribution is subject to the MIT License
-// https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
+// https://raw.githubusercontent.com/barendgehrels/langbath/main/src/LICENSE
 
 // This unit provides some general functions
 
@@ -16,10 +16,12 @@ uses
 
 type TArrayOfString = array of string;
 
+function ConfigDir : string;
 function AssureConfigFolder : boolean;
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
 function SplitString(s : string; sep : char) : TArrayOfString;
 
+// NOTE: it's slow.
 procedure Log(const s : string);
 
 implementation
@@ -40,11 +42,11 @@ begin
     delete(s, 1, p);
     p := pos(sep, s);
   end;
-  if s <> '' then
-  begin
-    SetLength(result, n + 1);
-    result[n] := s;
-  end;
+  //if s <> '' then
+  //begin
+  SetLength(result, n + 1);
+  result[n] := s;
+  //end;
 end;
 
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
@@ -68,10 +70,18 @@ begin
   end;
 end;
 
+function ConfigDir : string;
+begin
+  // Put all configuration of all programs in the suite
+  // in just one place: (windows /users/xxx/AppData/Local/langbath/)
+  result := StringReplace(GetAppConfigDir(false), ApplicationName, 'langbath',
+         [rfReplaceAll, rfIgnoreCase])
+end;
+
 function AssureConfigFolder : boolean;
 var folder : string;
 begin
-  folder := GetAppConfigDir(false);
+  folder := ConfigDir;
   result := DirectoryExists(folder);
   if not result then result := CreateDir (folder);
 end;
@@ -81,12 +91,14 @@ var filename : string;
   txt : TextFile;
   exists : boolean;
 begin
+//  writeln(s);
   EnterCriticalSection(gLogLock);
   try
 
     if not AssureConfigFolder then exit;
 
-    filename := GetAppConfigDir(false) + 'langbath.log';
+    filename := ConfigDir + 'langbath.log';
+
     exists := FileExists(filename);
     AssignFile(txt, filename);
     if exists then Append(txt) else Rewrite(txt);
@@ -99,6 +111,7 @@ end;
 
 initialization
 begin
+  Initialize(gLogLock);
   InitCriticalSection(gLogLock);
 end;
 

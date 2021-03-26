@@ -65,6 +65,14 @@ uses LCLIntf, LCLType, ComCtrls, lb_read_timings, lb_write_timings,
   lb_form_edit_book_settings, lb_bass,
   lb_lib;
 
+
+function IniFileName : string;
+const
+  KIniFile : string = 'langbath.ini';
+begin
+  result := ConfigDir + '\' + KIniFile;
+end;
+
 procedure TFormAssignTimes.FormCreate(Sender: TObject);
 begin
   {$IFDEF MSWINDOWS}
@@ -94,7 +102,7 @@ begin
   // Take care that the same ID is never used again
   list := TStringList.Create;
   try
-    ReadSettingsToStringList('', list);
+    ReadSettingsToStringList(Inifilename, '', list);
     FormEditBookSettings.SetExistingIds(list);
   finally
     list.free;
@@ -104,7 +112,7 @@ begin
   if FormEditBookSettings.ModalResult = mrOK then
   begin
     newSettings := FormEditBookSettings.GetSettings;
-    SaveEditedBookSettings(newSettings);
+    SaveEditedBookSettings(Inifilename, newSettings);
     // FOR NOW - it will be read next time
 
   end;
@@ -129,7 +137,7 @@ begin
       SaveContents(true);
 
       // Update (will be done automatically anyway, on exit)
-      SaveEditedBookSettings(iSettings);
+      SaveEditedBookSettings(Inifilename, iSettings);
 
       // If soundfile is updated, or anything else, the contents should be reread
       // but it forces loss of focus
@@ -176,8 +184,8 @@ end;
 procedure TFormAssignTimes.ReadSettings(const bookId : string);
 var index : integer;
 begin
-  iSettings := ReadBookSettings(bookId);
-  index := ReadSettingsToStringList(iSettings.iBookId, ComboBoxProject.Items);
+  iSettings := ReadBookSettings(Inifilename, bookId);
+  index := ReadSettingsToStringList(Inifilename, iSettings.iBookId, ComboBoxProject.Items);
   ComboBoxProject.ItemIndex := index;
 end;
 
@@ -222,7 +230,7 @@ begin
   item := iFrameReadSentences.ListViewSentences.Selected;
   if item <> nil then sentenceIndex := item.Index else sentenceIndex := -1;
 
-  SaveBookSettings(iSettings, sentenceIndex, iFrameReadSentences.GetRepeatSettings);
+  SaveBookSettings(Inifilename, iSettings, sentenceIndex, iFrameReadSentences.GetRepeatSettings);
 end;
 
 procedure TFormAssignTimes.CallSave;

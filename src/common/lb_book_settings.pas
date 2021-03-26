@@ -18,6 +18,8 @@ uses Classes;
 type
   TBookSettings = record
 
+    iSourceTypeId : integer;
+
     iCurrentSentenceIndex : integer;
 
     // If and how it should be repeated: in target language, translation, audio, etc.
@@ -37,12 +39,13 @@ type
   end;
 
 function DefaultBookSettings : TBookSettings;
-function ReadBookSettings(const ProjectId : string = '') : TBookSettings;
-procedure SaveBookSettings(const settings : TBookSettings; itemIndex : integer;
+function ReadBookSettings(const iniFileName : string; const ProjectId : string = '') : TBookSettings;
+procedure SaveBookSettings(const iniFileName : string; const settings : TBookSettings; itemIndex : integer;
       const repeatSettings : string);
-procedure SaveEditedBookSettings(const settings : TBookSettings);
-function ReadBookEntries : TStringList;
-function ReadSettingsToStringList(const ProjectId : string; items : TStrings) : integer;
+procedure SaveEditedBookSettings(const iniFileName : string;
+      const settings : TBookSettings);
+function ReadBookEntries(const iniFileName : string) : TStringList;
+function ReadSettingsToStringList(const iniFileName, ProjectId : string; items : TStrings) : integer;
 
 operator = (const left, right: TBookSettings) : boolean;
 
@@ -51,8 +54,6 @@ implementation
 uses IniFiles, SysUtils;
 
 const
-  KIniFile : string = 'langbath.ini';
-
   // General settings
   KSection : string = 'assign_timings';
   KEntryCurrentBookId : string = 'current.id'; // TODO maybe make numerical, titles in combo
@@ -71,27 +72,28 @@ const
   KEntrySrcTranslation : string = 'src.translation';
   KEntrySrcSound : string = 'src.sound';
 
+  KEntrySourceTypeId : string = 'source_type_id';
   KEntryCurrentSentence : string = 'sentence.current';
   KEntryRepeatSettings : string = 'repeat.settings';
 
-function IniFileName : string;
-begin
-  if ParamCount = 1 then
-  begin
-    result := ParamStr(1);
-    if FileExists(result) then
-    begin
-      exit;
-    end;
-  end;
-  result := GetAppConfigDir(false) + KIniFile;
-  if not FileExists(result) then
-  begin
-    result := KIniFile;
-  end;
-end;
+//function GetIniFileName : string;
+//begin
+//  if ParamCount = 1 then
+//  begin
+//    result := ParamStr(1);
+//    if FileExists(result) then
+//    begin
+//      exit;
+//    end;
+//  end;
+//  result := GetAppConfigDir(false) + KIniFile;
+//  if not FileExists(result) then
+//  begin
+//    result := KIniFile;
+//  end;
+//end;
 
-function ReadBookSettings(const ProjectId : string) : TBookSettings;
+function ReadBookSettings(const iniFileName, ProjectId : string) : TBookSettings;
 var ini : TIniFile;
   section, current : string;
 begin
@@ -110,10 +112,14 @@ begin
     if result.iBookId <> '' then
     begin
       section := KSection + '.' + result.iBookId;
+
       current := ini.ReadString(section, KEntryCurrentSentence, '');
       TryStrToInt(current, result.iCurrentSentenceIndex);
 
-      result.iRepeatSettings := ini.ReadString(section, KEntryRepeatSettings, '');;
+      current := ini.ReadString(section, KEntrySourceTypeId, '-1');
+      TryStrToInt(current, result.iSourceTypeId);
+
+      result.iRepeatSettings := ini.ReadString(section, KEntryRepeatSettings, '');
 
       result.iAuthor := ini.ReadString(section, KEntryAuthor, '');
       result.iTitle := ini.ReadString(section, KEntryTitle, '');
@@ -135,7 +141,7 @@ begin
   end;
 end;
 
-procedure SaveEditedBookSettings(const settings : TBookSettings);
+procedure SaveEditedBookSettings(const iniFileName : string; const settings : TBookSettings);
 var ini : TIniFile;
   section : string;
 
@@ -167,7 +173,7 @@ begin
   end;
 end;
 
-procedure SaveBookSettings(const settings : TBookSettings; itemIndex : integer;
+procedure SaveBookSettings(const iniFileName : string; const settings : TBookSettings; itemIndex : integer;
     const repeatSettings : string);
 var ini : TIniFile;
   section : string;
@@ -205,7 +211,7 @@ begin
   end;
 end;
 
-function ReadBookEntries : TStringList;
+function ReadBookEntries(const iniFileName : string) : TStringList;
 var ini : TIniFile;
   sections : TStringList;
   i : integer;
@@ -231,7 +237,7 @@ begin
   end;
 end;
 
-function ReadSettingsToStringList(const ProjectId : string; items : TStrings) : integer;
+function ReadSettingsToStringList(const iniFileName, ProjectId : string; items : TStrings) : integer;
 
   function IsSection(var s : string; const start : string) : boolean;
   var len : integer;

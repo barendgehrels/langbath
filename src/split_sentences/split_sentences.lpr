@@ -1,7 +1,7 @@
 // Language Bath
 // Copyright (c) 2020 Barend Gehrels, Amsterdam, the Netherlands.
 // Use, modification and distribution is subject to the MIT License
-// https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
+// https://raw.githubusercontent.com/barendgehrels/langbath/main/src/LICENSE
 
 // See description in the main unit
 
