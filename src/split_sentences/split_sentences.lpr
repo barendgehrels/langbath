@@ -11,7 +11,7 @@ program split_sentences;
 
 uses
   Classes, SysUtils,
-  lb_split_textfile_into_sentences;
+  lb_split_textfile_into_sentences, lb_split_string_into_sentences;
 
 var error : boolean;
   inputFilename, outputFilename : string;
