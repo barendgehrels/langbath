@@ -42,10 +42,9 @@ end;
 
 function RussianReplaceAccents(const s : string) : string;
 begin
-  // Note that the accents are two Unicode characters, not one
+  // Note that the letter-with-accents is a two Unicode character pair
   // (though sometimes shown as one)
-  // Therefore walking through UnicodePoints here doesn't work,
-  // or is more complex
+  // Therefore walking through UnicodePoints here doesn't work, or would be more complex
   result := s;
 
   result := StringReplace(result, 'а́', 'а', [rfReplaceAll]);

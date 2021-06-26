@@ -240,9 +240,8 @@ begin
   end;
 end;
 
-procedure SplitSentences(const inputFilename, outputFilename : string);
-var inputList, outputList : TStringList;
-  allText : string;
+function SplitSentences(const sentenceCollection : string) : TStringList;
+var
   currentPosition, endPosition: PChar;
   code, len: Integer;
   codePoint: String;
@@ -250,6 +249,60 @@ var inputList, outputList : TStringList;
   next, sentence, outputString : string;
   isPossibleEndOfSentence : boolean;
 
+begin
+  outputString := '';
+  isPossibleEndOfSentence := false;
+
+  result := TStringList.Create;
+
+  codePoint := '';
+  currentPosition := PChar(sentenceCollection);
+  endPosition := currentPosition + length(sentenceCollection);
+  while currentPosition < endPosition do
+  begin
+    len := UTF8CodepointSize(currentPosition);
+    SetLength(codePoint, len);
+    Move(currentPosition^, codePoint[1], len);
+
+    if isPossibleEndOfSentence then
+    begin
+      code := Classify(codePoint, 1);
+      if code = 1 then
+      begin
+        // New sentence
+        sentence := '';
+        next := '';
+        ExtractStartOfSentence(outputString, sentence, next);
+        AppendCleanOutput(result, sentence);
+        outputString := next;
+        isPossibleEndOfSentence := false;
+      end
+      else if code = 2 then
+      begin
+        isPossibleEndOfSentence := false;
+      end;
+    end;
+
+    outputString := outputString + codePoint;
+
+    // At a full stop (.) or other (?, !): if next character is a space,
+    // and next-next (or further) character is a capital,
+    // then the sentence is considered as complete.
+    if IsPossibleSplit(codePoint) then
+    begin
+      isPossibleEndOfSentence := true;
+    end;
+
+    inc(currentPosition, len);
+  end;
+
+  // Add the last string, if any
+  AppendCleanOutput(result, outputString);
+end;
+
+procedure SplitSentences(const inputFilename, outputFilename : string);
+var inputList, outputList : TStringList;
+  allText : string;
 begin
   if not FileExists(inputFilename) or FileExists(outputFilename) then
   begin
@@ -264,61 +317,12 @@ begin
     inputList.Free;
   end;
 
-
-  outputString := '';
-  isPossibleEndOfSentence := false;
-
-  outputList := TStringList.Create;
+  outputList := SplitSentences(allText);
   try
-    codePoint := '';
-    currentPosition := PChar(allText);
-    endPosition := currentPosition + length(allText);
-    while currentPosition < endPosition do
-    begin
-      len := UTF8CodepointSize(currentPosition);
-      SetLength(codePoint, len);
-      Move(currentPosition^, codePoint[1], len);
-
-      if isPossibleEndOfSentence then
-      begin
-        code := Classify(codePoint, 1);
-        if code = 1 then
-        begin
-          // New sentence
-          sentence := '';
-          next := '';
-          ExtractStartOfSentence(outputString, sentence, next);
-          AppendCleanOutput(outputList, sentence);
-          outputString := next;
-          isPossibleEndOfSentence := false;
-        end
-        else if code = 2 then
-        begin
-          isPossibleEndOfSentence := false;
-        end;
-      end;
-
-      outputString := outputString + codePoint;
-
-      // At a full stop (.) or other (?, !): if next character is a space,
-      // and next-next (or further) character is a capital,
-      // then the sentence is considered as complete.
-      if IsPossibleSplit(codePoint) then
-      begin
-        isPossibleEndOfSentence := true;
-      end;
-
-      inc(currentPosition, len);
-    end;
-
-    // Add the last string, if any
-    AppendCleanOutput(outputList, outputString);
-
-    // Post process the split sentences: try to split long strings at semicolons
+    // Postprocess the split sentences: try to split long strings at semicolons
     SplitLongSentences(outputList, 60, 25);
 
     outputList.SaveToFile(outputFilename);
-
   finally
     outputList.free;
   end;
