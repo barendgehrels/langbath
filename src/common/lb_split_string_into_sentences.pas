@@ -4,6 +4,20 @@
 // https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
 
 // The code unit splits one (usually big) string into multiple sentences.
+// It uses combinations of splitters: [.!?] plus spaces and lowercase/uppercase.
+// This long sentence: "This text will be split. The value of pi is 3.14 usually, but sometimes 3.1415. Can you call Dr.Jones? Or is he called Prof. Dr. Jones? He is probably from London. What a funny bloke it is! Actually he is called A.B.C. Jones."
+// will be splitted into:
+//   This text will be split.
+//   The value of pi is 3.14 usually, but sometimes 3.1415.
+//   Can you call Dr.Jones?
+//   Or is he called Prof. Dr. Jones?
+//   He is probably from London.
+//   What a funny bloke it is!
+//   Actually he is called A.B.C. Jones.
+// The dot requires special handling and will not always be correct, for example not for
+// "I've been to Omsk. It's a Russian city." - because we cannot distinguish "Prof." and "Omsk."
+// This limit can be specified, it is default 4.
+
 // Original use case is:
 //   - the user starts with a PDF, containing some text (for example a novel),
 //   - save its content into a textfile (for example with Acrobat Reader).
@@ -33,21 +47,24 @@ implementation
 uses LazUtf8;
 
 type
-  TCodePointClassification = (CPCUpper, CPCLower, CPCOther);
+  TCodePointClassification = (CPCUpper, CPCLower, CPCNumber, CPCSpace, CPCOther);
 
-// Classifies a code point (of one UTF character) as upper, lower or other
-function Classify(const codePoint : string;
-     resultIfNumber : TCodePointClassification) : TCodePointClassification;
+// Classifies a code point (of one UTF character) as uppercase, lowercase, number or other
+function Classify(const codePoint : string) : TCodePointClassification;
 var lower, upper : string;
 begin
   result := CPCOther;
 
   // Spaces are most common in calling this function, return immediately
-  if codePoint = ' ' then exit;
+  if codePoint = ' ' then
+  begin
+    result := CPCSpace;
+    exit;
+  end;
 
   if (length(codePoint) = 1) and (codePoint[1] >= '0') and (codePoint[1] <= '9') then
   begin
-    result := resultIfNumber;
+    result := CPCNumber;
     exit;
   end;
 
@@ -92,7 +109,7 @@ begin
     or (codePoint = ']') // in notes
     or (codePoint = '>') // in notes
     or (codePoint = ';')
-    or (Classify(codePoint, CPCLower) <> CPCOther) then
+    or (not (Classify(codePoint) in [CPCSpace, CPCOther])) then
     begin
      start := UTF8Copy(s, 1, i);
      finish := UTF8Copy(s, i + 1, len - i);
@@ -113,34 +130,63 @@ end;
 function SplitStringIntoSentences(const sentenceCollection : string) : TStringList;
 var
   currentPosition, endPosition: PChar;
-  len: Integer;
-  code : TCodePointClassification;
+  index, codePointSize: Integer;
+  previousCode, code : TCodePointClassification;
   codePoint: String;
 
   next, sentence, outputString : string;
-  isPossibleEndOfSentence : boolean;
+  isPossibleTitle, isPossibleEndOfSentence : boolean;
+  indexOfPossibleTitle, indexOfLowercase : integer;
 
 begin
+  previousCode := CPCOther;
   outputString := '';
   isPossibleEndOfSentence := false;
+  isPossibleTitle := false;
+  indexOfPossibleTitle := 0;
+  indexOfLowercase := 0;
 
   result := TStringList.Create;
 
+  index := 0;
   codePoint := '';
   currentPosition := PChar(sentenceCollection);
   endPosition := currentPosition + length(sentenceCollection);
   while currentPosition < endPosition do
   begin
-    len := UTF8CodepointSize(currentPosition);
-    SetLength(codePoint, len);
-    Move(currentPosition^, codePoint[1], len);
+    inc(index);
+    codePointSize := UTF8CodepointSize(currentPosition);
+    SetLength(codePoint, codePointSize);
+    Move(currentPosition^, codePoint[1], codePointSize);
+
+    code := Classify(codePoint);
+
+    if code = CPCLower then
+    begin
+      indexOfLowercase := index;
+    end;
+
+    if (code = CPCUpper)
+    and (previousCode = CPCSpace)
+    and (index - indexOfLowercase < 4)
+    then
+    begin
+      isPossibleTitle := true;
+      indexOfPossibleTitle := index;
+    end
+    else if (code = CPCSpace) or (index - indexOfPossibleTitle > 4) then
+    begin
+      // At a space it's not a title anymore. Also if it's too long ago, to avoid
+      // placenames being recognized as titles.
+      isPossibleTitle := false;
+    end;
 
     if isPossibleEndOfSentence then
     begin
-      code := Classify(codePoint, CPCUpper);
       if code = CPCUpper then
       begin
         // New sentence detected. Append the current one and start again
+        previousCode := CPCOther;
         sentence := '';
         next := '';
         ExtractStartOfSentence(outputString, sentence, next);
@@ -148,7 +194,7 @@ begin
         outputString := next;
         isPossibleEndOfSentence := false;
       end
-      else if code = CPCLower then
+      else if code in [CPCLower, CPCNumber] then
       begin
         isPossibleEndOfSentence := false;
       end;
@@ -156,15 +202,20 @@ begin
 
     outputString := outputString + codePoint;
 
-    // At a full stop (.) or other chars (?, !): if next character is a space,
+    // At a full stop (.) or other chars (?, !):
+    // If previous character wasn't a capital (to avoid A.B.C etc),
+    // and if next character is a space,
     // and next-next (or further) character is a capital,
     // then the sentence is considered as complete.
-    if IsPossibleSplit(codePoint) then
+    if ((previousCode <> CPCUpper) or (index - indexOfLowercase > 4))
+    and not isPossibleTitle
+    and IsPossibleSplit(codePoint) then
     begin
       isPossibleEndOfSentence := true;
     end;
 
-    inc(currentPosition, len);
+    previousCode := code;
+    inc(currentPosition, codePointSize);
   end;
 
   // Add the last string, if any

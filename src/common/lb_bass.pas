@@ -231,6 +231,7 @@ begin
 
     // Optionally add a bit of space at the start,
     // because, for example, on Linux, on VirtualBox, the start is often omitted
+    Initialize(buffer);
     fillchar(buffer, bufferSize, #0);
     memo.Write(buffer, min(bufferSize, trunc(timeFillStartSeconds * info.freq)));
 
