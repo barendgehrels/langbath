@@ -7,6 +7,9 @@ interface
 uses
   Classes, SysUtils, lb_types;
 
+function HasEquivalents(const s : string) : boolean;
+function ReplaceEquivalents(const s : string) : string;
+
 function RussianReplaceAccents(const s : string) : string;
 function RussianReplaceEquivalents(const s : string) : string;
 
@@ -62,6 +65,16 @@ end;
 function RussianReplaceEquivalents(const s : string) : string;
 begin
   result := StringReplace(s, 'ё', 'е', [rfReplaceAll]);
+end;
+
+function ReplaceEquivalents(const s : string) : string;
+begin
+  result := RussianReplaceEquivalents(s);
+end;
+
+function HasEquivalents(const s : string) : boolean;
+begin
+  result := UTF8Pos('ё', s) > 0;
 end;
 
 function Quoted(const s : string) : string;

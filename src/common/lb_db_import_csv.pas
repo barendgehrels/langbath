@@ -14,6 +14,8 @@ interface
 
 uses Classes, SysUtils, SqlDb, lb_sql_ddl;
 
+function ColumnList(const columnNames : array of string; const ColumnTypes : array of TColumnType) : string;
+
 function ImportCsvFile(cn: TSQLConnection; const CsvFilename, tableName : string;
    separator : char = #9;
    const IdSuffix : string = '';
@@ -25,7 +27,8 @@ function ImportCsvFile(cn: TSQLConnection;
    const ColumnTypes : array of TColumnType;
    const ColumnIndices : array of boolean;
    separator : char = #9;
-   maxLines : integer = -1) : boolean;
+   maxLines : integer = -1;
+   ignoreRest : boolean = false) : boolean;
 
 
 implementation
@@ -133,7 +136,8 @@ function ImportCsvFile(cn: TSQLConnection;
    const ColumnTypes : array of TColumnType;
    const ColumnIndices : array of boolean;
    separator : char = #9;
-   maxLines : integer = -1) : boolean;
+   maxLines : integer = -1;
+   ignoreRest : boolean = false) : boolean;
 var txt : TextFile;
   s, sql, indexname : string;
   ar : array of string;
@@ -161,6 +165,11 @@ begin
       inc(n);
       Readln(txt, s);
       ar := SplitString(s, separator);
+
+      if (length(ar) > length(columnNames)) and ignoreRest then
+      begin
+        SetLength(ar, length(ColumnNames));
+      end;
 
       if length(ar) <> length(columnNames) then
       begin
