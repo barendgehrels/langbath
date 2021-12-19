@@ -20,6 +20,7 @@ function ConfigDir : string;
 function AssureConfigFolder : boolean;
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
 function SplitString(s : string; sep : char) : TArrayOfString;
+function RepairAndSplitString(s : string; sep, quote : char) : TArrayOfString;
 
 // NOTE: it's slow.
 procedure Log(const s : string);
@@ -42,11 +43,50 @@ begin
     delete(s, 1, p);
     p := pos(sep, s);
   end;
-  //if s <> '' then
-  //begin
+  // Add last term (regardless if it's empty)
   SetLength(result, n + 1);
   result[n] := s;
-  //end;
+end;
+
+function RepairAndSplitString(s : string; sep, quote : char) : TArrayOfString;
+var p, pq, n : integer;
+  repaired : boolean;
+begin
+  result := [];
+  n := 0;
+  p := pos(sep, s);
+  while p > 0 do
+  begin
+    repaired := false;
+    SetLength(result, n + 1);
+    result[n] := copy(s, 1, p - 1);
+
+    // If it's double quoted, the "sep" might be inside. Try to "repair" this.
+    if copy(s, 1, 1) = quote then
+    begin
+      pq := pos(quote, s, 2);
+      if (pq > p) and ((copy(s, pq + 1, 1) = sep) or (pq = length(s))) then
+      begin
+        p := pq + 1;
+        result[n] := stringReplace(copy(s, 1, p - 1), sep, '\t', [rfReplaceAll]);
+        log(format('Repair term [%s]', [result[n]]));
+        repaired := true;
+      end
+      else
+      begin
+        log(format('invalid repair term [%s] %d %d %d', [s, p, pq, length(s)]));
+      end;
+    end;
+    inc(n);
+    delete(s, 1, p);
+    p := pos(sep, s);
+  end;
+  // Add last term (also if it's empty - but not if last string was repaired)
+  if not repaired then
+  begin
+    SetLength(result, n + 1);
+    result[n] := s;
+  end;
 end;
 
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;

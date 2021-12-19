@@ -24,6 +24,7 @@ function BareString(const s : string) : string;
 function Quoted(const s : string) : string;
 
 function ArrayAsString(const a : array of integer) : string;
+function ArrayAsString(const a : array of string) : string;
 
 function CreateBagOfWords(const s : string) : TArrayOfString;
 function InternationalSplitCharacters(const s : string) : TArrayOfString;
@@ -223,6 +224,17 @@ begin
   end;
   // SPECIFIC FOR SQL
   if result = '' then result := '-1';
+end;
+
+function ArrayAsString(const a: array of string): string;
+var i : integer;
+begin
+  result := '';
+  for i := low(a) to high(a) do
+  begin
+    if result <> '' then result := result + ', ';
+    result := result + '"' + a[i] + '"';
+  end;
 end;
 
 function LevenshteinDistanceOfBagOfWords(const s, t: array of string; out dbg : string): longint;
