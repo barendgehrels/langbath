@@ -23,7 +23,7 @@ function SplitString(s : string; sep : char) : TArrayOfString;
 function RepairAndSplitString(s : string; sep, quote : char) : TArrayOfString;
 
 // NOTE: it's slow.
-procedure Log(const s : string);
+procedure Log(const s : string; DoWrite : boolean = false);
 
 implementation
 
@@ -126,12 +126,18 @@ begin
   if not result then result := CreateDir (folder);
 end;
 
-procedure Log(const s : string);
+procedure Log(const s : string; DoWrite : boolean);
 var filename : string;
   txt : TextFile;
   exists : boolean;
+  hs : THeapStatus;
 begin
-//  writeln(s);
+  hs := GetHeapStatus;
+
+  if doWrite then
+  begin
+    writeln(inttostr(hs.TotalAllocated) + ' ' + s);
+  end;
   EnterCriticalSection(gLogLock);
   try
 
@@ -142,7 +148,7 @@ begin
     exists := FileExists(filename);
     AssignFile(txt, filename);
     if exists then Append(txt) else Rewrite(txt);
-    WriteLn(txt, s);
+    WriteLn(txt, inttostr(hs.TotalAllocated) + ' ' + s);
     CloseFile(txt);
   finally
     LeaveCriticalSection(gLogLock);

@@ -47,7 +47,7 @@ implementation
 uses LazUtf8;
 
 type
-  TCodePointClassification = (CPCUpper, CPCLower, CPCNumber, CPCSpace, CPCOther);
+  TCodePointClassification = (CPCUpper, CPCLower, CPCNumber, CPCSpace, CPCHash, CPCOther);
 
 // Classifies a code point (of one UTF character) as uppercase, lowercase, number or other
 function Classify(const codePoint : string) : TCodePointClassification;
@@ -59,6 +59,11 @@ begin
   if codePoint = ' ' then
   begin
     result := CPCSpace;
+    exit;
+  end;
+  if codePoint = '#' then
+  begin
+    result := CPCHash;
     exit;
   end;
 
@@ -135,7 +140,7 @@ var
   codePoint: String;
 
   next, sentence, outputString : string;
-  isPossibleTitle, isPossibleEndOfSentence : boolean;
+  isHashed, isPossibleTitle, isPossibleEndOfSentence : boolean;
   indexOfPossibleTitle, indexOfLowercase : integer;
 
 begin
@@ -143,6 +148,7 @@ begin
   outputString := '';
   isPossibleEndOfSentence := false;
   isPossibleTitle := false;
+  isHashed := false;
   indexOfPossibleTitle := 0;
   indexOfLowercase := 0;
 
@@ -166,15 +172,16 @@ begin
       indexOfLowercase := index;
     end;
 
-    if (code = CPCUpper)
+    if ((code = CPCUpper) or (code = CPCHash))
     and (previousCode = CPCSpace)
     and (index - indexOfLowercase < 4)
     then
     begin
+      isHashed := code = CPCHash;
       isPossibleTitle := true;
       indexOfPossibleTitle := index;
     end
-    else if (code = CPCSpace) or (index - indexOfPossibleTitle > 4) then
+    else if isPossibleTitle and ((code = CPCSpace) or (index - indexOfPossibleTitle > 4)) then
     begin
       // At a space it's not a title anymore. Also if it's too long ago, to avoid
       // placenames being recognized as titles.
@@ -183,7 +190,7 @@ begin
 
     if isPossibleEndOfSentence then
     begin
-      if code = CPCUpper then
+      if code in [CPCUpper, CPCHash] then
       begin
         // New sentence detected. Append the current one and start again
         previousCode := CPCOther;
@@ -194,7 +201,7 @@ begin
         outputString := next;
         isPossibleEndOfSentence := false;
       end
-      else if code in [CPCLower, CPCNumber] then
+      else if (code in [CPCLower, CPCNumber]) and not isHashed then
       begin
         isPossibleEndOfSentence := false;
       end;

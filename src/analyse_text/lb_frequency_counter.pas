@@ -94,6 +94,10 @@ procedure TFrequencyCounter.ReportFrom(target, interval : double);
 var i : integer;
   percentage : double;
 begin
+  if countrank = 0 then
+  begin
+    exit;
+  end;
   for i := low(limits) to high(limits) do
   begin
     percentage := 100.0 * countBelow[i] / countrank;
@@ -109,6 +113,10 @@ procedure TFrequencyCounter.ReportAll;
 var i : integer;
   percentage : double;
 begin
+  if countrank = 0 then
+  begin
+    exit;
+  end;
   for i := low(limits) to high(limits) do
   begin
     percentage := 100.0 * countBelow[i] / countrank;

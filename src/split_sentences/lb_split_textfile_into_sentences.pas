@@ -80,7 +80,7 @@ begin
 end;
 
 function CleanText(list : TStringList) : string;
-var s, item : string;
+var s : string;
   k : integer;
 begin
   // Process it per line:
@@ -89,8 +89,12 @@ begin
   // - Remove notes (e.g. [1234]) sometimes occuring in some old literature
   for k := 0 to list.Count - 1 do
   begin
-    item := trim(list[k]);
-    if IsRomanNumeral(item) then list[k] := '# ' + item + '.';
+    list[k] := trim(list[k]);
+    if IsRomanNumeral(list[k]) then list[k] := '# ' + list[k] + '.';
+    if list[k].StartsWith('#') and not list[k].EndsWith('.') then
+    begin
+      list[k] := list[k] + '.';
+    end;
     list[k] := RemoveNotes(list[k]);
   end;
 
@@ -98,7 +102,7 @@ begin
   s := list.text;
 
   // Change line breaks and form feeds into spaces
-  s := StringReplace(s, #10, ' ' , [rfReplaceAll]);
+  s := StringReplace(s, #10, ' ', [rfReplaceAll]);
   s := StringReplace(s, #12, ' ', [rfReplaceAll]);
   s := StringReplace(s, #13, ' ', [rfReplaceAll]);
 

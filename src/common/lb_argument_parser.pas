@@ -24,6 +24,7 @@ type
 
   TProgramArgument = record
     required : boolean; // change to option
+    isDefault : boolean;
     asChar : string;
     asWord : string;
     explanation : string;
@@ -36,7 +37,8 @@ type
 
 // Allows writing arguments in concise arrays, for example:
 // options := [Option('h', 'help'), Option('i', 'input', true, 'Input filename')];
-function Option(const c, w : string; r : boolean = false; const e : string = '') : TProgramArgument;
+function Option(const c, w : string; required : boolean = false;
+  const e : string = ''; isDefault : boolean = false) : TProgramArgument;
 
 // Writes all options on the console
 procedure PrintHelp(const a : array of TProgramArgument; const header : string = 'Usage');
@@ -59,12 +61,14 @@ implementation
 
 uses Variants;
 
-function Option(const c, w : string; r : boolean; const e : string) : TProgramArgument;
+function Option(const c, w : string; required : boolean; const e : string;
+   isDefault : boolean) : TProgramArgument;
 begin
   assert(length(c) = 1);
   assert(length(w) > 1);
 
-  result.required := r;
+  result.required := required;
+  result.isDefault := isDefault;
   result.asChar := c;
   result.asWord := w;
   result.explanation := e;
@@ -78,9 +82,9 @@ begin
   for i := low(a) to high(a) do
   begin
     s := s + ' ';
-    if not a[i].required then s := s + '[';
-    s := s + a[i].asChar + ' <string>';
-    if not a[i].required then s := s + ']';
+    if not a[i].required then s := s + '{';
+    s := s + '-' + a[i].asChar + ' ...';
+    if not a[i].required then s := s + '}';
   end;
   writeln(Header, ': ', ExtractFileName(paramstr(0)), s);
   for i := low(a) to high(a) do
@@ -132,6 +136,18 @@ begin
   v := [];
   SetLength(v, length(a));
   for i := low(v) to high(v) do v[i] := unassigned;
+
+  if ParamCount = 1 then
+  begin
+    for i := low(a) to high(a) do
+    begin
+      if a[i].isDefault then
+      begin
+        v[i] := ParamStr(1);
+        exit;
+      end;
+    end;
+  end;
 
   p := 1;
   while p <= ParamCount do

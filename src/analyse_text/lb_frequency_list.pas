@@ -20,7 +20,7 @@ type
   TArrayOfFrequencyEntry = array of TFrequencyEntry;
 
 procedure AppendList(var f1 : TArrayOfFrequencyEntry; const f2 : TArrayOfFrequencyEntry);
-function ReadFrequencyList(const frequencyFilename : string) : TArrayOfFrequencyEntry;
+function ReadFrequencyList(const frequencyFilename : string; verbose : boolean = false) : TArrayOfFrequencyEntry;
 function GetOtherFrequencyList(const filename : string; rank, source : integer) : TArrayOfFrequencyEntry;
 
 procedure SortByEntryAndRank(var a : TArrayOfFrequencyEntry);
@@ -112,7 +112,7 @@ begin
   end;
 end;
 
-function ReadFrequencyList(const frequencyFilename : string) : TArrayOfFrequencyEntry;
+function ReadFrequencyList(const frequencyFilename : string; verbose : boolean) : TArrayOfFrequencyEntry;
 var list : TStringList;
   rank, i : integer;
   written_term1 : string;
@@ -120,6 +120,8 @@ var list : TStringList;
 begin
   result := [];
   if frequencyFileName = '' then exit;
+
+  if verbose then writeln('Reading frequency list ' + frequencyFilename + '...');
 
   written_term1 := '';
   list := TStringList.Create;
@@ -151,10 +153,15 @@ begin
           AddEntry(rank, 1, ar[1], ar[1], result);
         end;
 
-      end else writeln('incomplete');
+      end else writeln('Incomplete ' + IntToStr(length(ar)) + ' ' + frequencyFilename + ' ' + ArrayAsString(ar));
     end;
 
   finally
+    if verbose then
+    begin
+      writeln(format('Finish reading frequency list %d entries from %d lines',
+        [length(result), list.count]));
+    end;
     list.free;
   end;
 end;

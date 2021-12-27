@@ -10,8 +10,8 @@ program analyse_text;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, SysUtils,
-  lb_analyse_textfile, lb_frequency_list, lb_string_counter, lb_frequency_counter;
+  Classes, SysUtils, lb_analyse_textfile, lb_frequency_list, lb_string_counter,
+  lb_frequency_counter, lb_lib_string_clean;
 
 function GetParam(index : integer; out filename : string) : boolean;
 begin
@@ -38,7 +38,7 @@ begin
 
   if ParamCount < 1 then
   begin
-    writeln('Usage: ' + ParamStr(0) + ' [input textfile]');
+    writeln('Usage: ' + ParamStr(0) + ' [text file] {frequency file} {name file} {common file}');
     halt;
   end;
   error := false;
