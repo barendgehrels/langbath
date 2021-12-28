@@ -1,0 +1,12 @@
+object FormDescribePicture: TFormDescribePicture
+  Left = 575
+  Height = 596
+  Top = 114
+  Width = 954
+  Caption = 'Describe the picture'
+  Constraints.MinHeight = 400
+  Constraints.MinWidth = 400
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '2.0.10.0'
+end
