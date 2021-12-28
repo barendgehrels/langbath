@@ -48,6 +48,7 @@ var
   url : string;
 begin
   result := '';
+  if ApiUrl = '' then exit;
   url := ApiUrl + '?client_id=' + ApiKey
     + '&orientation=';
   if landscape then url := url + 'landscape' else url := url + 'portrait';
@@ -85,6 +86,8 @@ var
   url : string;
 begin
   jsonData := GetJSON(Json);
+  if jsonData = nil then exit;
+
   try
     url := GetTag(jsondata, 'urls.regular');
 

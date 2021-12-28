@@ -39,7 +39,7 @@ implementation
 
 {$R *.lfm}
 
-uses Controls, IniFiles, lb_lib;
+uses Controls, IniFiles, Dialogs, lb_lib;
 
 { TFormDescribePicture }
 
@@ -47,7 +47,7 @@ function IniFileName : string;
 const
   KIniFile : string = 'langbath.ini';
 begin
-  result := ConfigDir + '\' + KIniFile;
+  result := ConfigDir + KIniFile;
 end;
 
 procedure TFormDescribePicture.FormCreate(Sender: TObject);
@@ -68,8 +68,16 @@ end;
 function TFormDescribePicture.ReadSettings : TDescribePictureSettings;
 const kSection = 'describe_picture';
 var ini : TIniFile;
+  filename : string;
 begin
   Initialize(result);
+
+  filename := IniFilename;
+  if not FileExists(filename) then
+  begin
+    ShowMessage('Please create an ini-file '  + filename);
+    exit;
+  end;
 
   ini := TIniFile.Create(IniFileName);
   try

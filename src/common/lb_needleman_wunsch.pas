@@ -1,3 +1,10 @@
+// Language Bath - Common
+// Copyright (c) 2021 Barend Gehrels, Amsterdam, the Netherlands.
+// Use, modification and distribution is subject to the MIT License
+// https://raw.githubusercontent.com/barendgehrels/langbath/main/src/LICENSE
+
+// Functions to compare two strings with Needleman-Wunsch alignment
+
 unit lb_needleman_wunsch;
 
 {$mode objfpc}{$H+}
@@ -16,7 +23,6 @@ implementation
 
 uses Math, LazUTF8;
 
-//https://stackoverflow.com/questions/2141383/delphi-compare-and-mark-string-differences
 procedure AlignWithNeedlemanWunsch (const A, B: string; const Aligner : string;
     d: integer; out AlignmentA, AlignmentB: string);
 

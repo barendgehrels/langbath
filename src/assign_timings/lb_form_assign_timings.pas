@@ -70,7 +70,7 @@ function IniFileName : string;
 const
   KIniFile : string = 'langbath.ini';
 begin
-  result := ConfigDir + '\' + KIniFile;
+  result := ConfigDir + KIniFile;
 end;
 
 procedure TFormAssignTimes.FormCreate(Sender: TObject);
