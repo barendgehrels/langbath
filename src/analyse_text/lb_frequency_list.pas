@@ -77,26 +77,38 @@ begin
   result := specialize CallFind<TFrequencyEntry, TCompareByEntry>(a, r);
 end;
 
-procedure AddEntry(rank, source : integer; entry : string; const mainEntry : string; var a : TArrayOfFrequencyEntry);
-var n : integer;
+procedure AddEntry(rank, source : integer; entry : string; const mainEntry : string;
+  var entries : TArrayOfFrequencyEntry; var index : cardinal);
 begin
   entry := trim(UTF8LowerString(entry));
   // TEMP (currently input sometimes contains it)
   entry := StringReplace(entry, '*', '', [rfReplaceAll]);
   if entry = '' then exit;
 
-  n := length(a);
-  SetLength(a, n + 1);
-  a[n].source := source;
-  a[n].rank := rank;
-  a[n].entry := entry;
-  a[n].mainEntry := mainEntry;
+  if length(entries) = index then
+  begin
+    // Increase it's capacity
+    SetLength(entries, length(entries) * 2);
+  end;
+
+  entries[index].source := source;
+  entries[index].rank := rank;
+  entries[index].entry := entry;
+  entries[index].mainEntry := mainEntry;
+  inc(index);
 
   // Replace ё with е and remove - (e.g. in кто-то), both in list and in words themselves
   // to find them and avoid taking various places of dashes into account
   // These entries are added in duplicate
-  if HasEquivalents(entry) then AddEntry(rank, source, ReplaceEquivalents(entry), mainEntry, a);
-  if pos('-', entry) > 0 then AddEntry(rank, source, StringReplace(entry, '-', '', [rfReplaceAll]), mainEntry, a);
+  if HasEquivalents(entry) then
+  begin
+    AddEntry(rank, source, ReplaceEquivalents(entry), mainEntry, entries, index);
+  end;
+  if UTF8Pos('-', entry) > 0 then
+  begin
+    entry := UTF8StringReplace(entry, '-', '', [rfReplaceAll]);
+    AddEntry(rank, source, entry, mainEntry, entries, index);
+  end;
 end;
 
 procedure AppendList(var f1: TArrayOfFrequencyEntry;
@@ -115,6 +127,7 @@ end;
 function ReadFrequencyList(const frequencyFilename : string; verbose : boolean) : TArrayOfFrequencyEntry;
 var list : TStringList;
   rank, i : integer;
+  resultIndex : cardinal;
   written_term1 : string;
   ar : TArrayOfString;
 begin
@@ -128,6 +141,11 @@ begin
   try
     list.LoadFromFile(frequencyFilename);
 
+    // Reserve space for the list, plus 10% for some variations,
+    // and set the result index (= result count)
+    resultIndex := 0;
+    SetLength(result, round(list.count * 1.1));
+
     for i := 0 to list.Count - 1 do
     begin
       ar := SplitString(list[i], #9);
@@ -138,25 +156,26 @@ begin
         if ar[2] <> '' then
         begin
           // Write second term
-          AddEntry(rank, 1, ar[2], ar[1], result);
+          AddEntry(rank, 1, ar[2], ar[1], result, resultIndex);
 
           if (ar[1] <> ar[2]) and (ar[1] <> written_term1) then
           begin
             // It differs and is not yet written (it's sorted on term1 too).
-            AddEntry(rank, 1, ar[1], ar[1], result);
+            AddEntry(rank, 1, ar[1], ar[1], result, resultIndex);
             written_term1 := ar[1];
           end;
         end
         else
         begin
           // There is no second term, add first
-          AddEntry(rank, 1, ar[1], ar[1], result);
+          AddEntry(rank, 1, ar[1], ar[1], result, resultIndex);
         end;
 
       end else writeln('Incomplete ' + IntToStr(length(ar)) + ' ' + frequencyFilename + ' ' + ArrayAsString(ar));
     end;
 
   finally
+    SetLength(result, resultIndex);
     if verbose then
     begin
       writeln(format('Finish reading frequency list %d entries from %d lines',
@@ -170,6 +189,7 @@ function GetOtherFrequencyList(const filename : string; rank, source : integer) 
 var
   list : TStringList;
   i : integer;
+  resultIndex : cardinal;
 begin
   result := [];
   if filename <> '' then
@@ -177,10 +197,14 @@ begin
     list := TStringList.Create;
     try
       list.LoadFromFile(filename);
+      // Set Length plus 10% extra
+      SetLength(result, round(list.count * 1.1));
+      resultIndex := 0;
       for i := 0 to list.count - 1 do
       begin
-        AddEntry(rank, source, list[i], list[i], result);
+        AddEntry(rank, source, list[i], list[i], result, resultIndex);
       end;
+      SetLength(result, resultIndex);
 
     finally
       list.free;
