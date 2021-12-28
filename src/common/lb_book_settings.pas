@@ -24,6 +24,7 @@ type
 
     // If and how it should be repeated: in target language, translation, audio, etc.
     iRepeatSettings : string;
+    iRepeatCount : integer;
 
     // ID (to save it and recognize it later, it should not change)
     iBookId : string;
@@ -36,12 +37,15 @@ type
 
     // Source (usually a URL - it's just documentation)
     iSrcTarget, iSrcTranslation, iSrcSound : string;
+
+    // How much time between playing (once), repeating, or before start
+    iPausePlay, iPauseRepeat, iPauseBeforeStart : double;
   end;
 
 function DefaultBookSettings : TBookSettings;
 function ReadBookSettings(const iniFileName : string; const ProjectId : string = '') : TBookSettings;
 procedure SaveBookSettings(const iniFileName : string; const settings : TBookSettings; itemIndex : integer;
-      const repeatSettings : string);
+      const repeatSettings : string; repeatCount : integer);
 procedure SaveEditedBookSettings(const iniFileName : string;
       const settings : TBookSettings);
 function ReadBookEntries(const iniFileName : string) : TStringList;
@@ -75,27 +79,31 @@ const
   KEntrySourceTypeId : string = 'source_type_id';
   KEntryCurrentSentence : string = 'sentence.current';
   KEntryRepeatSettings : string = 'repeat.settings';
+  KEntryRepeatCount : string = 'repeat.count';
 
-//function GetIniFileName : string;
-//begin
-//  if ParamCount = 1 then
-//  begin
-//    result := ParamStr(1);
-//    if FileExists(result) then
-//    begin
-//      exit;
-//    end;
-//  end;
-//  result := GetAppConfigDir(false) + KIniFile;
-//  if not FileExists(result) then
-//  begin
-//    result := KIniFile;
-//  end;
-//end;
+  KEntryPausePlay : string = 'pause.play';
+  KEntryPauseRepeat : string = 'pause.repeat';
+  KEntryPauseBeforeStart : string = 'pause.before_start';
+
+function IniReadInteger(ini : TIniFile; const section, entry : string; def : integer) : integer;
+var s : string;
+begin
+  result := def;
+  s := ini.ReadString(section, entry, IntToStr(def));
+  TryStrToInt(s, result);
+end;
+
+function IniReadFloat(ini : TIniFile; const section, entry : string; def : double) : double;
+var s : string;
+begin
+  result := def;
+  s := ini.ReadString(section, entry, FloatToStr(def));
+  TryStrToFloat(s, result);
+end;
 
 function ReadBookSettings(const iniFileName, ProjectId : string) : TBookSettings;
 var ini : TIniFile;
-  section, current : string;
+  section : string;
 begin
 
   ini := TIniFile.Create(IniFileName);
@@ -113,12 +121,9 @@ begin
     begin
       section := KSection + '.' + result.iBookId;
 
-      current := ini.ReadString(section, KEntryCurrentSentence, '');
-      TryStrToInt(current, result.iCurrentSentenceIndex);
-
-      current := ini.ReadString(section, KEntrySourceTypeId, '-1');
-      TryStrToInt(current, result.iSourceTypeId);
-
+      result.iCurrentSentenceIndex := IniReadInteger(ini, section, KEntryCurrentSentence, 0);
+      result.iSourceTypeId := IniReadInteger(ini, section, KEntrySourceTypeId, -1);
+      result.iRepeatCount := IniReadInteger(ini, section, KEntryRepeatCount, -1);
       result.iRepeatSettings := ini.ReadString(section, KEntryRepeatSettings, '');
 
       result.iAuthor := ini.ReadString(section, KEntryAuthor, '');
@@ -127,13 +132,16 @@ begin
       result.iFilenameTarget := ini.ReadString(section, KEntryTarget, '');
       result.iFilenameTranslation := ini.ReadString(section, KEntryTranslation, '');
       result.iFilenameTimings := ini.ReadString(section, KEntryTimings, '');
-      result.iFilenameSound  := ini.ReadString(section, KEntrySound, '');
+      result.iFilenameSound := ini.ReadString(section, KEntrySound, '');
 
       result.iSrcTarget := ini.ReadString(section, KEntrySrcTarget, '');
       result.iSrcTranslation := ini.ReadString(section, KEntrySrcTranslation, '');
-      result.iSrcSound  := ini.ReadString(section, KEntrySrcSound, '');
+      result.iSrcSound := ini.ReadString(section, KEntrySrcSound, '');
 
-      result.iLanguage  := ini.ReadString(section, KEntryLanguageTarget, '');
+      result.iLanguage := ini.ReadString(section, KEntryLanguageTarget, '');
+      result.iPausePlay := ini.ReadFloat(section, KEntryPausePlay, 4.0);
+      result.iPauseRepeat := ini.ReadFloat(section, KEntryPauseRepeat, 0.5);
+      result.iPauseBeforeStart := ini.ReadFloat(section, KEntryPauseBeforeStart, 0.2);
     end;
 
   finally
@@ -174,7 +182,7 @@ begin
 end;
 
 procedure SaveBookSettings(const iniFileName : string; const settings : TBookSettings; itemIndex : integer;
-    const repeatSettings : string);
+    const repeatSettings : string; repeatCount : integer);
 var ini : TIniFile;
   section : string;
 begin
@@ -202,6 +210,14 @@ begin
         ini.DeleteKey(section, KEntryRepeatSettings);
       end;
 
+      if repeatCount <> length(repeatSettings) then
+      begin
+        ini.WriteInteger(section, KEntryRepeatCount, repeatCount);
+      end
+      else
+      begin
+        ini.DeleteKey(section, KEntryRepeatCount);
+      end;
     end;
 
     // Write general settings

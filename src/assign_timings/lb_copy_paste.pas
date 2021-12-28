@@ -9,10 +9,11 @@ uses
 
 function SelectionAsStringList(list : TListView; many : boolean; subItemIndex, maxChars : integer) : TStringList;
 procedure PasteList(listView : TListView; list : TStrings; many : boolean; subItemIndex : integer);
+procedure CorrectNames(listView : TListView; list : TStrings; index1, index2 : integer);
 
 implementation
 
-uses LazUtf8, lb_ui_lib;
+uses LazUtf8, lb_ui_lib, lb_replace_names_in_translations;
 
 function SelectionAsStringList(list : TListView; many : boolean; subItemIndex, maxChars : integer) : TStringList;
 var item : TListItem;
@@ -67,6 +68,42 @@ begin
       if i = list.count then exit;
     end;
   end;
+end;
+
+procedure CorrectNames(listView : TListView; list : TStrings; index1, index2 : integer);
+var item : TListItem;
+  itemIndex, i, j, k, c, count : integer;
+  s : string;
+  tca : TCorrectedTranslationArray;
+  tc : TCorrectedTranslation;
+begin
+  tca := ReadTranslationCorrections('c:\mdata\languages\russian\books\Nosov\DunnoToTheMoon\DunnoToTheMoon_corrections.txt');
+
+  count := 0;
+  item := listView.Selected;
+  itemIndex := item.index;
+  for k := 0 to list.Count - 1 do
+  begin
+    item := listView.Items[itemIndex + k];
+    for i := 0 to length(tca) - 1 do
+    begin
+      if Utf8Pos(tca[i].Original, item.subitems[index1]) > 0 then
+      begin
+        tc := tca[i];
+        for j := low(tc.WrongTranslation) to high(tc.WrongTranslation) do
+        begin
+          s := StringReplace(item.subitems[index2],
+            tc.WrongTranslation[j], tc.CorrectedTranslation, [rfReplaceAll], c);
+          if c > 0 then
+          begin
+            item.subitems[index2] := s;
+            inc(count, c);
+          end;
+        end;
+      end;
+    end;
+  end;
+  //showmessage(inttostr(count) + ' replaced');
 end;
 
 

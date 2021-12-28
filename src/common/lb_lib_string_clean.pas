@@ -36,6 +36,7 @@ begin
   begin
     Result := UTF8StringReplace(Result, punctuations[i], '', [rfReplaceAll]);
   end;
+  result := UTF8Trim(result);
 end;
 
 function NormalizeWord(const s: string): string;

@@ -43,6 +43,7 @@ object FrameReadSentences: TFrameReadSentences
         'Repeat each sentence X times'
         'Play each sentence once'
       )
+      OnClick = RadioGroupPlayClick
       ParentColor = False
       TabOrder = 0
     end
@@ -315,6 +316,7 @@ object FrameReadSentences: TFrameReadSentences
         Top = 97
         Width = 24
         NumbersOnly = True
+        OnChange = EditRepeatingChange
         TabStop = False
         TabOrder = 8
         Text = '2'

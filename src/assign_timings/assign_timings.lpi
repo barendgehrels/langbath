@@ -17,6 +17,7 @@
       <XPManifest>
         <DpiAware Value="True"/>
       </XPManifest>
+      <Icon Value="0"/>
     </General>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
@@ -34,7 +35,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="18">
+    <Units Count="19">
       <Unit0>
         <Filename Value="assign_timings.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -126,6 +127,10 @@
         <Filename Value="lb_listview_const.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit17>
+      <Unit18>
+        <Filename Value="..\shared\lb_replace_names_in_translations.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit18>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -136,8 +141,8 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <Libraries Value="\usr\lib\gcc\x86_64-linux-gnu\9\;..\..\bin"/>
-      <OtherUnitFiles Value="..\common;..\common\3rdparty"/>
+      <Libraries Value="\usr\lib\gcc\x86_64-linux-gnu\9;..\..\bin"/>
+      <OtherUnitFiles Value="..\common;..\common\3rdparty;..\shared"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>

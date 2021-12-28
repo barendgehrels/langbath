@@ -230,7 +230,9 @@ begin
   item := iFrameReadSentences.ListViewSentences.Selected;
   if item <> nil then sentenceIndex := item.Index else sentenceIndex := -1;
 
-  SaveBookSettings(Inifilename, iSettings, sentenceIndex, iFrameReadSentences.GetRepeatSettings);
+  SaveBookSettings(Inifilename, iSettings, sentenceIndex,
+    iFrameReadSentences.GetRepeatSettings,
+    iFrameReadSentences.GetRepeatCount);
 end;
 
 procedure TFormAssignTimes.CallSave;
@@ -245,7 +247,9 @@ end;
 procedure TFormAssignTimes.ShowCurrent;
 begin
   iFrameReadSentences.SelectAndShowListItem(iSettings.iCurrentSentenceIndex);
-  iFrameReadSentences.SetRepeatSettings(iSettings.iRepeatSettings);
+  iFrameReadSentences.SetRepeatSettings(iSettings.iRepeatSettings, iSettings.iRepeatCount);
+  iFrameReadSentences.SetPauseSettings(iSettings.iPausePlay, iSettings.iPauseRepeat,
+    iSettings.iPauseBeforeStart);
 end;
 
 procedure TFormAssignTimes.FormShow(Sender: TObject);

@@ -89,6 +89,7 @@ type
     procedure ButtonSplitTargetClick(Sender: TObject);
     procedure ButtonSplitTranslationClick(Sender: TObject);
     procedure ButtonWaveFormClick(Sender: TObject);
+    procedure EditRepeatingChange(Sender: TObject);
     procedure ListViewSentencesSelectItem(Sender: TObject; Item: TListItem;
       Selected: Boolean);
     procedure MemoTranslationKeyUp(Sender: TObject; var Key: Word;
@@ -97,6 +98,7 @@ type
     procedure MemoMouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure ButtonCopyClick(Sender: TObject);
+    procedure RadioGroupPlayClick(Sender: TObject);
     procedure TimerRepeatTimer(Sender: TObject);
     procedure TimerStateOnTimer(Sender: TObject);
     procedure Panel3Resize(Sender: TObject);
@@ -117,6 +119,8 @@ type
     iSentencesDirty : boolean;
 
     iRepeatSettings : TArrayOfRepeatSettings;
+
+    iPausePlay, iPauseRepeat, iPauseBeforeStart : double;
 
     // Index of the sentence being repeated
     iRepeatSentenceIndex : integer;
@@ -168,7 +172,9 @@ type
     procedure SelectAndShowListItem(index : integer);
 
     function GetRepeatSettings : string;
-    procedure SetRepeatSettings(const settings : string);
+    property GetRepeatCount : integer read iRepeatCount;
+    procedure SetRepeatSettings(const settings : string; count : integer);
+    procedure SetPauseSettings(PausePlay, PauseRepeat, PauseBeforeStart : double);
 
     property TimesDirty : boolean read iTimesDirty write SetTimesDirty;
     property SentencesDirty : boolean read iSentencesDirty write SetSentencesDirty;
@@ -180,11 +186,6 @@ implementation
 
 uses ClipBrd, LazUtf8, Math,
   lb_lib, lb_ui_lib, lb_form_wave_form, lb_form_paste, lb_copy_paste, lb_form_repeat_settings;
-
-const
-  KRepeatSeparationMilliseconds : integer = 500;
-  KPlaySeparationMilliseconds : integer = 2000;
-  KFillStartSeconds : double = 0.2;
 
 procedure ExtraLog(const s : string);
 begin
@@ -553,7 +554,7 @@ begin
     // Play the same sentence again
     if GetCurrentRepeatSettings.playAudio then
     begin
-      iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds, KFillStartSeconds);
+      iBass.PlaySelection(iRepeatBeginSeconds, iRepeatEndSeconds, iPauseBeforeStart);
     end;
     TimerRepeat.Enabled := true;
     ProgressBarSentence.Position := iRepeatIndex * 1000;
@@ -630,6 +631,16 @@ begin
     finally
       TimerState.Enabled := true;
     end;
+  end;
+end;
+
+procedure TFrameReadSentences.EditRepeatingChange(Sender: TObject);
+begin
+  TryStrToInt(EditRepeating.Text, iRepeatCount);
+  if iRepeatCount < 2 then
+  begin
+    iRepeatCount := 2;
+    EditRepeating.Text := IntToStr(iRepeatCount);
   end;
 end;
 
@@ -774,6 +785,11 @@ begin
   end;
 end;
 
+procedure TFrameReadSentences.RadioGroupPlayClick(Sender: TObject);
+begin
+
+end;
+
 procedure TFrameReadSentences.ButtonPasteClick(Sender: TObject);
 var c : integer;
   list : TStrings;
@@ -800,6 +816,9 @@ begin
   if FormPaste.ModalResult = mrOK then
   begin
     PasteList(ListViewSentences, FormPaste.GetNewTranslation, CheckBoxCopyMany.checked, KColumnTranslation);
+    CorrectNames(ListViewSentences, FormPaste.GetNewTranslation, KColumnTarget, KColumnTranslation);
+
+    SetSentencesDirty(true);
   end;
 end;
 
@@ -1035,7 +1054,7 @@ end;
 
 procedure TFrameReadSentences.PlaySentence(item : TListItem);
 var pos1, pos2 : double;
-  sep : integer;
+  sep : double;
 begin
   iRepeatIndex := 0;
   iRepeatSentenceIndex := -1;
@@ -1049,17 +1068,14 @@ begin
     iRepeatBeginSeconds := pos1;
     iRepeatEndSeconds := pos2;
 
-    if IsRepeating then sep := KRepeatSeparationMilliseconds else sep := KPlaySeparationMilliseconds;
+    if IsRepeating then sep := iPauseRepeat else sep := iPausePlay;
 
-    // The sample will have a bit of extra space at the start
-    sep := sep + trunc(KFillStartSeconds * 1000);
-
-    TimerRepeat.Interval := trunc(1000 * (pos2 - pos1)) + sep;
+    TimerRepeat.Interval := trunc(1000 * ((pos2 - pos1) + sep + iPauseBeforeStart));
     TimerRepeat.Enabled := true;
 
     if GetCurrentRepeatSettings.playAudio then
     begin
-      iBass.PlaySelection(pos1, pos2, KFillStartSeconds);
+      iBass.PlaySelection(pos1, pos2, iPauseBeforeStart);
     end;
     iRepeatSentenceIndex := item.Index;
   end;
@@ -1118,15 +1134,21 @@ begin
   result := RepeatSettingsAsString(iRepeatSettings);
 end;
 
-procedure TFrameReadSentences.SetRepeatSettings(const settings : string);
-var len : integer;
+procedure TFrameReadSentences.SetRepeatSettings(const settings : string; count : integer);
 begin
   iRepeatSettings := StringAsArrayOfRepeatSettings(settings);
-  len := length(iRepeatSettings);
-  if len >= 2 then
-  begin
-    EditRepeating.Text := inttostr(len);
-  end;
+  iRepeatCount := count;
+  if iRepeatCount < 2 then iRepeatCount := length(iRepeatSettings);
+  if iRepeatCount < 2 then iRepeatCount := 2;
+  EditRepeating.Text := inttostr(iRepeatCount);
+end;
+
+procedure TFrameReadSentences.SetPauseSettings(PausePlay, PauseRepeat,
+  PauseBeforeStart: double);
+begin
+  iPausePlay := PausePlay;
+  iPauseRepeat := PauseRepeat;
+  iPauseBeforeStart := PauseBeforeStart;
 end;
 
 end.
