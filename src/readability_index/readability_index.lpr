@@ -63,6 +63,7 @@ begin
 end;
 
 procedure AnalyzeText(const textString, base : string; csv, oneLine : boolean);
+const wordsPerPage = 250;
 var
   splitted, bag: TStringList;
   rm: TReadabilityMeasurements;
@@ -110,7 +111,7 @@ begin
 
       writeln(format(fmt,
       [title,
-        rm.wordcount,
+        round(rm.wordcount / wordsPerPage),
         rm.TextReadabilityIndex,
         rm.AutomatedReadabilityIndex,
         rm.ColemanLiauIndex,

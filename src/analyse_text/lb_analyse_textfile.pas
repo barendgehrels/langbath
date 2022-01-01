@@ -85,10 +85,11 @@ end;
 
 procedure AnalyzeTextfile(const inputFilename, frequencyFilename,
   nameFilename, commonFilename: string);
+const wordsPerPage = 250;
 var
   list, splitted, bag: TStringList;
   i, j: integer;
-  s, sentence, term, lowerCaseTerm, base: string;
+  s, sentence, term, lowerCaseTerm, base, title: string;
   totalWordCount, totalSentenceCount: integer;
   isLowerCase: boolean;
   freqList, f2: TArrayOfFrequencyEntry;
@@ -255,22 +256,38 @@ begin
 
     stringCounter.Report(base + '_occurences.txt');
 
-    writeln('------------------------------');
-    writeln(base);
-    writeln('Number of sentences     : ' + IntToStr(totalSentenceCount));
-    writeln(format('Words per sentence (avg): %.2f', [totalWordCount / totalSentenceCount]));
-    if countrank > 0 then
-      writeln(format('Average rank            : %.2f', [sumrank / countrank]));
-    writeln(format('Words found             : %d %', [round(100 * countrank / totalWordCount)]));
-    writeln(format('Text readability index  : %.2f', [readabilityMeasurements.TextReadabilityIndex]));
-    writeln(format('Aut. readability index  : %.2f', [readabilityMeasurements.AutomatedReadabilityIndex]));
-    writeln(format('Coleman Liau index      : %.2f', [readabilityMeasurements.ColemanLiauIndex]));
-    writeln(format('LIX (läsbarhetsindex)   : %.2f', [readabilityMeasurements.LIX]));
+    title := base;
+    if false then
+    begin
+      title := title.PadLeft(36);
 
-    frequencyCounter1.ReportFrom(70, 10);
-    frequencyCounter2.ReportAll;
+      writeln(format('%.36s  %5d %5d %% %7.2f %7.2f %7.2f %7.2f',
+        [title,
+          round(readabilityMeasurements.wordCount / wordsPerPage),
+          round(100 * (countrank / totalWordCount) * frequencyCounter2.FractionOfOneLimit(2500)),
+          readabilityMeasurements.TextReadabilityIndex,
+          readabilityMeasurements.AutomatedReadabilityIndex,
+          readabilityMeasurements.ColemanLiauIndex,
+          readabilityMeasurements.LIX]));
+    end
+    else
+    begin
+      writeln('------------------------------');
+      writeln(base);
+      writeln('Number of sentences     : ' + IntToStr(totalSentenceCount));
+      writeln(format('Words per sentence (avg): %.2f', [totalWordCount / totalSentenceCount]));
+      if countrank > 0 then
+        writeln(format('Average rank            : %.2f', [sumrank / countrank]));
+      writeln(format('Words found             : %d %', [round(100 * countrank / totalWordCount)]));
+      writeln(format('Text readability index  : %.2f', [readabilityMeasurements.TextReadabilityIndex]));
+      writeln(format('Aut. readability index  : %.2f', [readabilityMeasurements.AutomatedReadabilityIndex]));
+      writeln(format('Coleman Liau index      : %.2f', [readabilityMeasurements.ColemanLiauIndex]));
+      writeln(format('LIX (läsbarhetsindex)   : %.2f', [readabilityMeasurements.LIX]));
 
-    writeln;
+      frequencyCounter1.ReportFrom(70, 10);
+      frequencyCounter2.ReportAll;
+      writeln;
+    end;
 
   finally
 

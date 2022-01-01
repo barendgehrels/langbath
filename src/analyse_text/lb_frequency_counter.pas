@@ -30,6 +30,8 @@ uses
 
 type
 
+  { TFrequencyCounter }
+
   TFrequencyCounter = class
   public
     constructor Create(stepSize, minRank, maxRank : integer);
@@ -37,6 +39,7 @@ type
     procedure Add(rank : integer);
     procedure ReportFrom(target, interval : double);
     procedure ReportAll;
+    function FractionOfOneLimit(limit : integer) : double;
   private
     countRank : integer;
     countBelow : array of integer;
@@ -123,6 +126,22 @@ begin
     writeln(format('Words top %5d         : %d %%', [limits[i], trunc(percentage)]));
   end;
 end;
+
+function TFrequencyCounter.FractionOfOneLimit(limit : integer): double;
+var i : integer;
+begin
+  result := 0;
+  for i := low(limits) to high(limits) do
+  begin
+    if limits[i] = limit then
+    begin
+      result := countBelow[i] / countrank;
+      exit;
+    end;
+  end;
+end;
+
+
 
 end.
 

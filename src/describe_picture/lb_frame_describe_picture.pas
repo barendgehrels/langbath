@@ -175,6 +175,7 @@ begin
   end;
 
   // List information
+  ListBoxLt.Visible := true;
   ListBoxLt.Items.Clear;
   ListBoxLt.Items.Add(format('%s %s', [iLtHints.detectedLanguageCode, iLtHints.detectedLanguage]));
   for i := low(iLtHints.hints) to high(iLtHints.hints) do
@@ -255,7 +256,7 @@ procedure TFrameDescribe.ButtonDeepLClick(Sender: TObject);
 
   function ProcessSentence(const sentence : string) : TSentenceAndCorrection;
   var
-    translatedTwice, via, viaTranslation, jsonAnswer, j2, j3 : string;
+    translatedTwice, via, viaTranslation, jsonAnswer, jsonIgnored : string;
     bestDistance, levDistance, i : integer;
   begin
     Initialize(result);
@@ -304,9 +305,9 @@ procedure TFrameDescribe.ButtonDeepLClick(Sender: TObject);
     if iSettings.iCheckLanguage <> '' then
     begin
       result.iNativeTranslation1 := Translate(iSettings.iTargetLanguage,
-        iSettings.iCheckLanguage, sentence, j2);
+        iSettings.iCheckLanguage, sentence, jsonIgnored);
       result.iNativeTranslation2 := Translate(iSettings.iTargetLanguage,
-        iSettings.iCheckLanguage, result.iTranslatedTwice, j3);
+        iSettings.iCheckLanguage, result.iTranslatedTwice, jsonIgnored);
     end;
   end;
 
@@ -331,9 +332,14 @@ var i  : integer;
   list : TStringList;
   s : string;
 begin
+  ListBoxLt.Visible := false;
+
   list := SplitStringIntoSentences(MemoInput.Text);
-  CompareAndAssign(list);
-  list.free;
+  try
+    CompareAndAssign(list);
+  finally
+    list.free;
+  end;
 
   MemoNative.Lines.clear;
 
@@ -353,8 +359,8 @@ begin
        iSentenceAndCorrections[i].iViaTranslation, s]));
 
     // Experimental - to check the meaning
-    MemoNative.Lines.Add(iSentenceAndCorrections[i].iNativeTranslation1);
-    MemoNative.Lines.Add(iSentenceAndCorrections[i].iNativeTranslation2);
+    MemoNative.Lines.Add('direct : ' + iSentenceAndCorrections[i].iNativeTranslation1);
+    MemoNative.Lines.Add('fwd/bck: ' + iSentenceAndCorrections[i].iNativeTranslation2);
   end;
   CombineResults;
 
