@@ -13,37 +13,24 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics,
-  lb_language_tool_types, lb_describe_picture_settings;
+  lb_language_tool_types, lb_describe_picture_settings,
+  lb_deepl_functionality;
 
 type
-
-  { TFrameDescribe }
-
-  TSentenceAndCorrection = record
-    iSentence : string;
-    iTranslatedTwice : string;
-    iViaTranslation : string;
-    iNativeTranslation1 : string;
-    iNativeTranslation2 : string;
-    iErrorMessage : string;
-    iViaLanguage : string;
-    iKeep : boolean;
-    iLevenshteinDistance : integer;
-  end;
 
   TFrameDescribe = class(TFrame)
     ButtonDeepL: TButton;
     ButtonLanguageTool: TButton;
     ButtonGetRandomPicture: TButton;
     EditTopic: TEdit;
-    EditLanguageToCheck: TEdit;
     GroupBox4: TGroupBox;
     Image2: TImage;
     Label1: TLabel;
-    ListBoxLt: TListBox;
-    MemoNative: TMemo;
+    LabelDetectedLanguage1: TLabel;
+    LabelDetectedLanguage2: TLabel;
+    LabelDetectedLanguage3: TLabel;
+    MemoResult: TMemo;
     MemoInput: TMemo;
-    MemoOutput: TMemo;
     PaintBox: TPaintBox;
     Panel1: TPanel;
     PanelCenter: TPanel;
@@ -65,7 +52,6 @@ type
     iSentenceAndCorrections : array of TSentenceAndCorrection;
     iEntered : string;
     iSettings : TDescribePictureSettings;
-    iDebugDeepL : boolean;
 
     procedure CompareAndAssign(list : TStringList);
   end;
@@ -77,20 +63,23 @@ implementation
 uses LazUTF8, FpJson, JsonParser, Math,
   lb_detect_language_errors, lb_random_picture,
   lb_needleman_wunsch, lb_draw_text,
-  lb_lib_string,
-  lb_split_string_into_sentences;
+  lb_lib, lb_split_string_into_sentences;
 
 constructor TFrameDescribe.Create(AOwner : TComponent; const settings : TDescribePictureSettings);
 begin
   inherited Create(AOwner);
   iSettings := settings;
+  FormalityRadioGroup.ItemIndex := 0;
+  LabelDetectedLanguage1.Caption := '';
+  LabelDetectedLanguage2.Caption := '';
+  LabelDetectedLanguage3.Caption := '';
+  PanelCenter.Caption := '';
 end;
 
 destructor TFrameDescribe.Destroy;
 begin
   inherited Destroy;
 end;
-
 
 procedure TFrameDescribe.ButtonGetRandomPictureClick(Sender: TObject);
 begin
@@ -156,7 +145,7 @@ begin
   Initialize(iLtHints);
   iDlCorrection := '';
 
-  json := RequestLanguageTool(EditLanguageToCheck.Text, MemoInput.Lines.Text);
+  json := CallLanguageToolDotOrgAPI(iSettings.iTargetLanguage, MemoInput.Lines.Text);
 
   iLtHints := GetCorrectionsFromLanguageTool(MemoInput.Lines.Text, json);
 
@@ -174,10 +163,12 @@ begin
     end;
   end;
 
-  // List information
-  ListBoxLt.Visible := true;
-  ListBoxLt.Items.Clear;
-  ListBoxLt.Items.Add(format('%s %s', [iLtHints.detectedLanguageCode, iLtHints.detectedLanguage]));
+  // Give information
+  LabelDetectedLanguage1.Caption := iLtHints.detectedLanguageCode;
+  LabelDetectedLanguage2.Caption := iLtHints.detectedLanguage;
+  LabelDetectedLanguage3.Caption := format('%d %%', [round(100.0 * iLtHints.detectedLanguageConfidence)]);
+
+  MemoResult.lines.Clear;
   for i := low(iLtHints.hints) to high(iLtHints.hints) do
   begin
     ltHint := iLtHints.hints[i];
@@ -188,13 +179,8 @@ begin
       s := s + ltHint.replacements[j];
     end;
     s := s + '] ' + ltHint.message;
-    ListBoxLt.Items.Add(s);
+    MemoResult.Lines.Add(s);
   end;
-
-
-  // Debug/raw information
-  MemoOutput.Lines.Clear;
-  MemoOutput.Lines.Add(json);
 
   PaintBox.Invalidate;
 end;
@@ -228,7 +214,7 @@ begin
     if index >= 0 then
     begin
       sentences[i] := iSentenceAndCorrections[index];
-      sentences[i].iKeep := true;
+      sentences[i].iSkip := true;
     end
     else
     begin
@@ -242,74 +228,6 @@ end;
 
 procedure TFrameDescribe.ButtonDeepLClick(Sender: TObject);
 
-  function Translate(const src, target, lines : string; out json : string) : string;
-  var formality : string;
-  begin
-    formality := '';
-    if FormalityRadioGroup.ItemIndex >= 0 then
-    begin
-      formality := FormalityRadioGroup.Items[FormalityRadioGroup.ItemIndex];
-    end;
-    json := TranslateWithDeepL(iSettings.iDeepLApiUrl, iSettings.iDeepLApiKey, src, target, formality, lines);
-    result := InterpretDeepLAnswer(json);
-  end;
-
-  function ProcessSentence(const sentence : string) : TSentenceAndCorrection;
-  var
-    translatedTwice, via, viaTranslation, jsonAnswer, jsonIgnored : string;
-    bestDistance, levDistance, i : integer;
-  begin
-    Initialize(result);
-    result.iSentence := sentence;
-    bestDistance := MaxInt;
-    for i := low(iSettings.iViaLanguages) to high(iSettings.iViaLanguages) do
-    begin
-      via := iSettings.iViaLanguages[i];
-      viaTranslation := Translate(iSettings.iTargetLanguage, via, sentence, jsonAnswer);
-      if viaTranslation = '' then
-      begin
-        result.iErrorMessage := concat(result.iErrorMessage, via, ' ', jsonAnswer);
-        if iDebugDeepL then
-        begin
-          MemoOutput.lines.Add('');
-          MemoOutput.lines.Add(via + ' ' + jsonAnswer);
-        end;
-      end
-      else
-      begin
-        translatedTwice := Translate(via, iSettings.iTargetLanguage, viaTranslation, jsonAnswer);
-        levDistance := LevenshteinDistance(sentence, translatedTwice);
-
-        if iDebugDeepL then
-        begin
-          MemoOutput.lines.Add('');
-          MemoOutput.lines.Add(via + ' ' + inttostr(levDistance) + ' ' + sentence);
-          MemoOutput.lines.Add('(' + viaTranslation + ')');
-          MemoOutput.lines.Add(translatedTwice);
-        end;
-
-        if levDistance < bestDistance then
-        begin
-          result.iTranslatedTwice := translatedTwice;
-          result.iViaLanguage := via;
-          result.iLevenshteinDistance := levDistance;
-          result.iViaTranslation := viaTranslation;
-          bestDistance := levDistance;
-        end else if levDistance = bestDistance then
-        begin
-          result.iViaLanguage := result.iViaLanguage + '/' + via;
-          result.iViaTranslation := result.iViaTranslation + '/' + viaTranslation;
-        end;
-      end;
-    end;
-    if iSettings.iCheckLanguage <> '' then
-    begin
-      result.iNativeTranslation1 := Translate(iSettings.iTargetLanguage,
-        iSettings.iCheckLanguage, sentence, jsonIgnored);
-      result.iNativeTranslation2 := Translate(iSettings.iTargetLanguage,
-        iSettings.iCheckLanguage, result.iTranslatedTwice, jsonIgnored);
-    end;
-  end;
 
   procedure CombineResults;
   var i : integer;
@@ -330,9 +248,9 @@ procedure TFrameDescribe.ButtonDeepLClick(Sender: TObject);
 
 var i  : integer;
   list : TStringList;
-  s : string;
+  formality, debugTag : string;
+  sac : TSentenceAndCorrection;
 begin
-  ListBoxLt.Visible := false;
 
   list := SplitStringIntoSentences(MemoInput.Text);
   try
@@ -341,26 +259,40 @@ begin
     list.free;
   end;
 
-  MemoNative.Lines.clear;
+  MemoResult.Lines.clear;
+
+  formality := '';
+  if (FormalityRadioGroup.ItemIndex >= 0)
+  and (iSettings.iTargetLanguage = 'RU') // TODO: "hasFormality" in ini-file
+  then
+  begin
+    formality := FormalityRadioGroup.Items[FormalityRadioGroup.ItemIndex];
+  end;
 
   for i := low(iSentenceAndCorrections) to high(iSentenceAndCorrections) do
   begin
-    s := 'KEEP';
-    if not iSentenceAndCorrections[i].iKeep then
+    if iSentenceAndCorrections[i].iSkip then
     begin
-      iSentenceAndCorrections[i] := ProcessSentence(iSentenceAndCorrections[i].iSentence);
-      s := 'CHECK';
+      debugTag := 'SKIPPED because it was unaltered';
+    end
+    else
+    begin
+      iSentenceAndCorrections[i] := TranslateWithDeepL(iSettings, formality, iSentenceAndCorrections[i].iSentence);
+      debugTag := 'TRANSLATED via ' + iSentenceAndCorrections[i].iViaLanguage;
     end;
+    sac := iSentenceAndCorrections[i];
 
-    MemoOutput.lines.Add(format('%d %s [%s -> %s] (%s)',
-      [iSentenceAndCorrections[i].iLevenshteinDistance,
-       iSentenceAndCorrections[i].iTranslatedTwice,
-       iSentenceAndCorrections[i].iViaLanguage,
-       iSentenceAndCorrections[i].iViaTranslation, s]));
+    // To check the meaning of the entered sentence, also provide it in the native language
+    MemoResult.Lines.Add(format('%s->%s: %s (%s)', [iSettings.iTargetLanguage,
+        iSettings.iCheckLanguage, sac.iCheckTranslation1, debugTag]));
 
-    // Experimental - to check the meaning
-    MemoNative.Lines.Add('direct : ' + iSentenceAndCorrections[i].iNativeTranslation1);
-    MemoNative.Lines.Add('fwd/bck: ' + iSentenceAndCorrections[i].iNativeTranslation2);
+    if sac.iCheckTranslation1 <> sac.iCheckTranslation2 then
+    begin
+      MemoResult.Lines.Add(format('%s->%s->%s->%s : %s (%s)',
+        [iSettings.iTargetLanguage, sac.iViaLanguage, iSettings.iTargetlanguage,
+        iSettings.iCheckLanguage,
+        sac.iCheckTranslation2, debugTag]));
+    end;
   end;
   CombineResults;
 

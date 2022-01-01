@@ -36,4 +36,6 @@ via_languages=PL,CS
 check_language=ES
 ```
 
+Language codes can be found here:
+https://www.deepl.com/nl/docs-api/translating-text/request/
 

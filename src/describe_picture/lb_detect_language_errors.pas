@@ -14,103 +14,44 @@ interface
 uses
   Classes, SysUtils, lb_language_tool_types;
 
-function RequestLanguageTool(const language, input : string) : string;
-function GetCorrectionsFromLanguageTool(const input, json : string) : TLanguageToolCorrection;
+// Makes a request to LanguageTool.org and returns a JSON string
+function CallLanguageToolDotOrgAPI(const language, input : string) : string;
 
-function TranslateWithDeepL(const ApiUrl, ApiKey : string;
-      const source_language, target_language, formality, input : string) : string;
-function InterpretDeepLAnswer(const Json: string) : string;
+function GetCorrectionsFromLanguageTool(const input, json : string) : TLanguageToolCorrection;
 
 
 implementation
 
-uses fphttpclient, OpenSslSockets, fpjson, jsonparser, lazUtf8, lb_types;
+uses fphttpclient, OpenSslSockets, fpjson, jsonparser, lazUtf8, lb_lib, lb_types, lb_lib_json;
 
-function RequestLanguageTool(const language, input : string) : string;
-
-  procedure AddHeadersForJson(client : TFpHttpClient);
-  begin
-    client.AddHeader('User-Agent','Mozilla/5.0 (compatible; fpweb)');
-    client.AddHeader('Content-Type','application/json; charset=UTF-8');
-    client.AddHeader('Accept', 'application/json');
-  end;
-
+function CallLanguageToolDotOrgAPI(const language, input : string) : string;
 const url : string = 'https://languagetool.org/api/v2/check';
 var
   client : TFPHTTPClient;
+  request : string;
   response : TStringStream;
 begin
   result := '';
   Response := TStringStream.Create('');
   client := TFPHTTPClient.Create(nil);
   try
-    AddHeadersForJson(client);
-    client.RequestBody := TRawByteStringStream.Create(
-        'text=' + input
+    client.AddHeader('User-Agent','Mozilla/5.0 (compatible; fpweb)');
+    client.AddHeader('Content-Type','application/json; charset=UTF-8');
+    client.AddHeader('Accept', 'application/json');
+    request := 'text=' + input
         + '&language=' + language
-        + '&enabledOnly=false');
+        + '&enabledOnly=false';
+    client.RequestBody := TRawByteStringStream.Create(request);
     client.Post(url, Response);
     result := Response.DataString;
   finally
     client.free;
     response.free;
   end;
+
+  log(format('CALL LANGUAGE TOOL: %s -> %s', [request, result]));
 end;
 
-function TranslateWithDeepL(const ApiUrl, ApiKey : string; const source_language, target_language,
-          formality, input : string) : string;
-// The URL should be something like: https://api-free.deepl.com/v2/translate
-// The key should be requested at DeepL, it's free.
-var
-  client : TFPHTTPClient;
-  response : TStringStream;
-  query : string;
-begin
-  result := '';
-  Response := TStringStream.Create('');
-  client := TFPHTTPClient.Create(nil);
-  try
-    query := 'auth_key=' + ApiKey
-      + '&text=' + input
-      + '&source_lang=' + source_language
-      + '&target_lang=' + target_language;
-    if (formality <> '') and (target_language = 'RU') then
-    begin
-      query := query + '&formality=' + formality;
-    end;
-
-    client.RequestBody := TRawByteStringStream.Create(query);
-    client.AddHeader('Accept', '*/*');
-    client.AddHeader('Content-Type','application/x-www-form-urlencoded');
-    client.Post(ApiUrl, Response);
-    result := Response.DataString;
-  finally
-    client.free;
-    response.free;
-  end;
-end;
-
-function GetTag(jsonData : TJsonData; const tag : string) : string;
-var sub : TJsonData;
-begin
-  result := '';
-  sub := jsonData.FindPath(tag);
-  if sub <> nil then
-  begin
-    result := sub.AsString;
-  end;
-end;
-
-function GetTagAsInteger(jsonData : TJsonData; const tag : string) : integer;
-var sub : TJsonData;
-begin
-  result := -1;
-  sub := jsonData.FindPath(tag);
-  if sub <> nil then
-  begin
-    result := sub.AsInteger;
-  end;
-end;
 
 function GetCorrectionsFromLanguageTool(const input, json : string) : TLanguageToolCorrection;
 
@@ -145,6 +86,7 @@ begin
   try
     result.detectedLanguageCode := GetTag(jsonData, 'language.detectedLanguage.code');
     result.detectedLanguage := GetTag(jsonData, 'language.detectedLanguage.name');
+    result.detectedLanguageConfidence := GetTagAsDouble(jsonData, 'language.detectedLanguage.confidence');
 
     i := 0;
     repeat
@@ -169,27 +111,6 @@ begin
       end;
       inc(i);
     until tag = '';
-  finally
-    jsonData.Free;
-  end;
-end;
-
-function InterpretDeepLAnswer(const Json: string) : string;
-var
-  jsonData : TJSONData;
-  i : integer;
-  s : string;
-begin
-  result := '';
-
-  jsonData := GetJSON(Json);
-  try
-    i := 0;
-    repeat
-      s := GetTag(jsonData, 'translations[' + inttostr(i) + '].text');
-      result := result + s;
-      inc(i);
-    until s = '';
   finally
     jsonData.Free;
   end;

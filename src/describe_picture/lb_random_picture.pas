@@ -22,7 +22,7 @@ procedure PictureLoadFromUrl(const picture: TPicture; const url: String);
 implementation
 
 uses
-  FpHttpClient, FpJson, JsonParser;
+  FpHttpClient, FpJson, lb_lib_json;
 
 
 procedure PictureLoadFromUrl(const picture: TPicture; const url: String);
@@ -69,16 +69,6 @@ end;
 
 procedure GetPictureFromJsonAnswer(const Json : string; const picture: TPicture);
 
-  function GetTag(jsonData : TJsonData; const tag : string) : string;
-  var sub : TJsonData;
-  begin
-    result := '';
-    sub := jsonData.FindPath(tag);
-    if sub <> nil then
-    begin
-      result := sub.AsString;
-    end;
-  end;
 
 var
   jsonData : TJSONData;

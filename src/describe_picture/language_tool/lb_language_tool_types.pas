@@ -28,6 +28,7 @@ type
   TLanguageToolCorrection = record
     detectedLanguageCode : string;
     detectedLanguage : string;
+    detectedLanguageConfidence : double;
     hints : array of TLanguageToolHint;
   end;
 
