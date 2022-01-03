@@ -61,7 +61,7 @@ implementation
 {$R *.lfm}
 
 uses LazUTF8, FpJson, JsonParser, Math,
-  lb_detect_language_errors, lb_random_picture,
+  lb_detect_language_errors, lb_lib_unsplash,
   lb_needleman_wunsch, lb_draw_text,
   lb_lib, lb_split_string_into_sentences;
 
@@ -83,7 +83,7 @@ end;
 
 procedure TFrameDescribe.ButtonGetRandomPictureClick(Sender: TObject);
 begin
-  GetPictureFromJsonAnswer(RequestUnsplash(iSettings.iUnsplashApiUrl, iSettings.iUnsplashApiKey,
+  GetUnsplashPictureFromJson(CallUnsplashAPI(iSettings.iUnsplashApiUrl, iSettings.iUnsplashApiKey,
       Image2.Width > Image2.Height, EditTopic.text), Image2.Picture);
 end;
 

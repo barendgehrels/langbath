@@ -84,7 +84,7 @@ begin
   try
     i := 0;
     repeat
-      s := GetTag(jsonData, format('translations[%d].text', [i]));
+      s := GetTagAsString(jsonData, format('translations[%d].text', [i]));
       result := result + s;
       inc(i);
     until s = '';

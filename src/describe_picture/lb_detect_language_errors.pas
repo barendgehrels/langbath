@@ -84,14 +84,14 @@ begin
   jsonData := GetJSON(json);
 
   try
-    result.detectedLanguageCode := GetTag(jsonData, 'language.detectedLanguage.code');
-    result.detectedLanguage := GetTag(jsonData, 'language.detectedLanguage.name');
+    result.detectedLanguageCode := GetTagAsString(jsonData, 'language.detectedLanguage.code');
+    result.detectedLanguage := GetTagAsString(jsonData, 'language.detectedLanguage.name');
     result.detectedLanguageConfidence := GetTagAsDouble(jsonData, 'language.detectedLanguage.confidence');
 
     i := 0;
     repeat
       tagBase := 'matches[' + inttostr(i) + '].';
-      tag := GetTag(jsonData, tagBase + 'sentence');
+      tag := GetTagAsString(jsonData, tagBase + 'sentence');
       if tag <> '' then
       begin
         offset := GetTagAsInteger(jsonData, tagBase + 'offset');
@@ -102,9 +102,9 @@ begin
           result.hints[n].offset := offset + 1;
           result.hints[n].length := len;
           result.hints[n].replacements := GetTagAsReplacements(jsonData, tagBase);
-          result.hints[n].message := GetTag(jsonData, tagBase + 'message');
-          result.hints[n].issueType := GetTag(jsonData, tagBase + 'rule.issueType');
-          result.hints[n].categoryId := GetTag(jsonData, tagBase + 'rule.category.id');
+          result.hints[n].message := GetTagAsString(jsonData, tagBase + 'message');
+          result.hints[n].issueType := GetTagAsString(jsonData, tagBase + 'rule.issueType');
+          result.hints[n].categoryId := GetTagAsString(jsonData, tagBase + 'rule.category.id');
           result.hints[n].inputPart := UTF8Copy(input, offset + 1, len);
           inc(n);
         end;

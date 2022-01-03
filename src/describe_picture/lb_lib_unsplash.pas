@@ -5,7 +5,7 @@
 
 // Functions to retrieve a random picture (from unsplash.com)
 
-unit lb_random_picture;
+unit lb_lib_unsplash;
 
 {$mode objfpc}{$H+}
 
@@ -14,21 +14,23 @@ interface
 uses
   Classes, SysUtils, Graphics;
 
-function RequestUnsplash(const ApiUrl, ApiKey : string; landscape : boolean;
+// Makes a request to Unplash and returns a JSON string
+function CallUnsplashAPI(const ApiUrl, ApiKey : string; landscape : boolean;
       const subject : string = '') : string;
-procedure GetPictureFromJsonAnswer(const Json : string; const picture: TPicture);
-procedure PictureLoadFromUrl(const picture: TPicture; const url: String);
+
+// Make a request to Unsplash to get the picture referred to in the JSON string
+procedure GetUnsplashPictureFromJson(const Json : string; const picture: TPicture);
 
 implementation
 
 uses
-  FpHttpClient, FpJson, lb_lib_json;
+  FpHttpClient, FpJson, lb_lib, lb_lib_json;
 
-
-procedure PictureLoadFromUrl(const picture: TPicture; const url: String);
+procedure GetPictureFromUrl(const url: String; const picture: TPicture);
 var
   LMemoryStream: TMemoryStream;
 begin
+  log(format('GET PICTURE: %s', [url]));
   LMemoryStream := TMemoryStream.Create;
   try
     TFPHTTPClient.SimpleGet(url, LMemoryStream);
@@ -39,62 +41,53 @@ begin
   end;
 end;
 
-function RequestUnsplash(const ApiUrl, ApiKey : string; landscape : boolean; const subject : string) : string;
+function CallUnsplashAPI(const ApiUrl, ApiKey : string; landscape : boolean; const subject : string) : string;
 // The URL should be something like: https://api.unsplash.com/photos/random
 // The key should be requested at Unsplash, it's free
 var
   client : TFPHTTPClient;
   response : TStringStream;
-  url : string;
+  request : string;
 begin
   result := '';
   if ApiUrl = '' then exit;
-  url := ApiUrl + '?client_id=' + ApiKey
-    + '&orientation=';
-  if landscape then url := url + 'landscape' else url := url + 'portrait';
+  request := ApiUrl + '?orientation=';
+  if landscape then request := request + 'landscape' else request := request + 'portrait';
 
   // Add subject
-  if subject <> ''then url := url + '&query=' + subject;
+  if subject <> ''then request := request + '&query=' + subject;
 
   Response := TStringStream.Create('');
   client := TFPHTTPClient.Create(nil);
   try
-    client.Get(url, Response);
+    client.Get(request + '&client_id=' + ApiKey, Response);
     result := Response.DataString;
+    log(format('CALL UNSPLASH: %s -> %s', [request, result]));
   finally
     client.free;
     response.free;
   end;
 end;
 
-procedure GetPictureFromJsonAnswer(const Json : string; const picture: TPicture);
-
-
+procedure GetUnsplashPictureFromJson(const Json : string; const picture: TPicture);
 var
   jsonData : TJSONData;
-  LMemoryStream: TMemoryStream;
   url : string;
 begin
   jsonData := GetJSON(Json);
   if jsonData = nil then exit;
 
   try
-    url := GetTag(jsondata, 'urls.regular');
-
-    // Now get the URL
-    LMemoryStream := TMemoryStream.Create;
-    try
-      TFPHTTPClient.SimpleGet(url, LMemoryStream);
-      LMemoryStream.Position := 0;
-      picture.LoadFromStream(LMemoryStream);
-    finally
-      FreeAndNil(LMemoryStream);
+    url := GetTagAsString(jsondata, 'urls.regular');
+    if url <> '' then
+    begin
+      // Use HTTP to get the picture from the URL
+      GetPictureFromUrl(url, picture);
     end;
 
   finally
     jsonData.free;
   end;
-
 end;
 
 end.
