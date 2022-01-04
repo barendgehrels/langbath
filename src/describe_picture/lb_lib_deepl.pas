@@ -4,16 +4,30 @@
 // https://raw.githubusercontent.com/barendgehrels/langbath/main/src/LICENSE
 
 // Implements functionality to call and interpret DeepL
-unit lb_deepl_functionality;
+unit lb_lib_deepl;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, lb_describe_picture_settings;
+  Classes, SysUtils;
 
 type
+
+  TDeepLSettings = record
+    // The URL should be something like: https://api-free.deepl.com/v2/translate
+    // The key should be requested at DeepL, it's free (for low volumes)
+    iApiUrl : string;
+    iApiKey : string;
+
+    // Via languages: one or more languages to translate the entered text to, and then from
+    iViaLanguages : array of string;
+
+    // Other language (usually the user's native language) to check if the sentence makes sense.
+    iCheckLanguage : string;
+  end;
+
   TSentenceAndCorrection = record
     iSentence : string;
     iTranslatedTwice : string;
@@ -27,8 +41,8 @@ type
 
 // Translate the sentence with DEEPL to all specified VIA-languages, and translate them
 // back. The translation closest to the original is kept as the best result.
-function TranslateWithDeepL(const settings : TDescribePictureSettings;
-  const formality, sentence : string) : TSentenceAndCorrection;
+function TranslateWithDeepL(const settings : TDeepLSettings;
+  const targetLanguage, formality, sentence : string) : TSentenceAndCorrection;
 
 
 implementation
@@ -39,8 +53,6 @@ uses fphttpclient, OpenSslSockets, fpJson,
 // Makes a request to DeepL and returns a JSON string
 function CallDeepLApi(const ApiUrl, ApiKey : string; const sourceLanguage, targetLanguage,
           formality, input : string) : string;
-// The URL should be something like: https://api-free.deepl.com/v2/translate
-// The key should be requested at DeepL, it's free (for low volumes)
 var
   client : TFPHTTPClient;
   request : string;
@@ -94,13 +106,14 @@ begin
 end;
 
 
-function CallAndGetTranslation(const settings : TDescribePictureSettings; const src, target, formality, sentence : string; out json : string) : string;
+function CallAndGetTranslation(const settings : TDeepLSettings; const src, target, formality, sentence : string; out json : string) : string;
 begin
-  json := CallDeepLApi(settings.iDeepLApiUrl, settings.iDeepLApiKey, src, target, formality, sentence);
+  json := CallDeepLApi(settings.iApiUrl, settings.iApiKey, src, target, formality, sentence);
   result := GetTranslationFromJson(json);
 end;
 
-function ProcessSentence(const settings : TDescribePictureSettings;const formality, sentence : string) : TSentenceAndCorrection;
+function ProcessSentence(const settings : TDeepLSettings;
+          const targetLanguage, formality, sentence : string) : TSentenceAndCorrection;
 var
   translatedTwice, via, viaTranslation, jsonAnswer : string;
   bestDistance, levDistance, i : integer;
@@ -115,14 +128,14 @@ begin
   for i := low(settings.iViaLanguages) to high(settings.iViaLanguages) do
   begin
     via := settings.iViaLanguages[i];
-    viaTranslation := CallAndGetTranslation(settings, settings.iTargetLanguage, via, formality, sentence, jsonAnswer);
+    viaTranslation := CallAndGetTranslation(settings, targetLanguage, via, formality, sentence, jsonAnswer);
     if viaTranslation = '' then
     begin
       result.iErrorMessage := concat(result.iErrorMessage, via, ' ', jsonAnswer);
     end
     else
     begin
-      translatedTwice := CallAndGetTranslation(settings, via, settings.iTargetLanguage, formality, viaTranslation, jsonAnswer);
+      translatedTwice := CallAndGetTranslation(settings, via, targetLanguage, formality, viaTranslation, jsonAnswer);
       levDistance := LevenshteinDistance(sentence, translatedTwice);
 
       log(format('PROC DEEPL: %s: dist=%d: %s -> %s -> %s',
@@ -148,15 +161,15 @@ begin
   end;
 end;
 
-function TranslateWithDeepL(const settings : TDescribePictureSettings; const formality, sentence : string) : TSentenceAndCorrection;
+function TranslateWithDeepL(const settings : TDeepLSettings; const targetLanguage, formality, sentence : string) : TSentenceAndCorrection;
 var jsonIgnored : string;
 begin
-  result := ProcessSentence(settings, formality, sentence);
+  result := ProcessSentence(settings, targetLanguage, formality, sentence);
   if settings.iCheckLanguage <> '' then
   begin
-    result.iCheckTranslation1 := CallAndGetTranslation(settings, settings.iTargetLanguage,
+    result.iCheckTranslation1 := CallAndGetTranslation(settings, targetLanguage,
       settings.iCheckLanguage, formality, result.iSentence, jsonIgnored);
-    result.iCheckTranslation2 := CallAndGetTranslation(settings, settings.iTargetLanguage,
+    result.iCheckTranslation2 := CallAndGetTranslation(settings, targetLanguage,
       settings.iCheckLanguage, formality, result.iTranslatedTwice, jsonIgnored);
   end;
 end;

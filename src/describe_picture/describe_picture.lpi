@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="13">
+    <Units Count="12">
       <Unit0>
         <Filename Value="describe_picture.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -52,7 +52,7 @@
         <ResourceBaseClass Value="Form"/>
       </Unit1>
       <Unit2>
-        <Filename Value="lb_detect_language_errors.pas"/>
+        <Filename Value="lb_lib_language_tool_org.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
       <Unit3>
@@ -71,33 +71,29 @@
         <IsPartOfProject Value="True"/>
       </Unit5>
       <Unit6>
-        <Filename Value="language_tool\lb_language_tool_types.pas"/>
+        <Filename Value="..\common\lb_lib.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\common\lb_lib.pas"/>
+        <Filename Value="lb_describe_picture_settings.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="lb_describe_picture_settings.pas"/>
+        <Filename Value="..\common\lb_split_string_into_sentences.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\common\lb_split_string_into_sentences.pas"/>
+        <Filename Value="lb_lib_deepl.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
-        <Filename Value="lb_deepl_functionality.pas"/>
+        <Filename Value="..\common\lb_lib_json.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="..\common\lb_lib_json.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit11>
-      <Unit12>
         <Filename Value="lb_lib_unsplash.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit12>
+      </Unit11>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -108,7 +104,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\common;..\shared\ui;language_tool"/>
+      <OtherUnitFiles Value="..\common;..\shared\ui"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

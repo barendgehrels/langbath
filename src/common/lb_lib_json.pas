@@ -5,15 +5,15 @@ unit lb_lib_json;
 interface
 
 uses
-  Classes, SysUtils, fpJson, JsonParser;
+  Classes, SysUtils, fpJson;
 
-function GetTag(jsonData : TJsonData; const tag : string) : string;
+function GetTagAsString(jsonData : TJsonData; const tag : string) : string;
 function GetTagAsInteger(jsonData : TJsonData; const tag : string) : integer;
 function GetTagAsDouble(jsonData : TJsonData; const tag : string) : double;
 
 implementation
 
-function GetTag(jsonData : TJsonData; const tag : string) : string;
+function GetTagAsString(jsonData : TJsonData; const tag : string) : string;
 var sub : TJsonData;
 begin
   result := '';

@@ -26,9 +26,9 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, lb_form_describe_picture, lb_detect_language_errors,
-  lb_frame_describe_picture, lb_lib, lb_language_tool_types,
-  lb_describe_picture_settings, lb_deepl_functionality, lb_lib_json;
+  Forms, lb_form_describe_picture, lb_lib_language_tool_org,
+  lb_frame_describe_picture, lb_lib,
+  lb_describe_picture_settings, lb_lib_deepl, lb_lib_json;
 
 {$R *.res}
 

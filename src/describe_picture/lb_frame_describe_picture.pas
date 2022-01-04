@@ -13,8 +13,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, Graphics,
-  lb_language_tool_types, lb_describe_picture_settings,
-  lb_deepl_functionality;
+  lb_describe_picture_settings,
+  lb_lib_deepl, lb_lib_language_tool_org;
 
 type
 
@@ -61,7 +61,7 @@ implementation
 {$R *.lfm}
 
 uses LazUTF8, FpJson, JsonParser, Math,
-  lb_detect_language_errors, lb_lib_unsplash,
+  lb_lib_unsplash,
   lb_needleman_wunsch, lb_draw_text,
   lb_lib, lb_split_string_into_sentences;
 
@@ -277,20 +277,21 @@ begin
     end
     else
     begin
-      iSentenceAndCorrections[i] := TranslateWithDeepL(iSettings, formality, iSentenceAndCorrections[i].iSentence);
+      iSentenceAndCorrections[i] := TranslateWithDeepL(iSettings.iDeepLSettings,
+        iSettings.iTargetLanguage, formality, iSentenceAndCorrections[i].iSentence);
       debugTag := 'TRANSLATED via ' + iSentenceAndCorrections[i].iViaLanguage;
     end;
     sac := iSentenceAndCorrections[i];
 
     // To check the meaning of the entered sentence, also provide it in the native language
     MemoResult.Lines.Add(format('%s->%s: %s (%s)', [iSettings.iTargetLanguage,
-        iSettings.iCheckLanguage, sac.iCheckTranslation1, debugTag]));
+        iSettings.iDeepLSettings.iCheckLanguage, sac.iCheckTranslation1, debugTag]));
 
     if sac.iCheckTranslation1 <> sac.iCheckTranslation2 then
     begin
       MemoResult.Lines.Add(format('%s->%s->%s->%s : %s (%s)',
         [iSettings.iTargetLanguage, sac.iViaLanguage, iSettings.iTargetlanguage,
-        iSettings.iCheckLanguage,
+        iSettings.iDeepLSettings.iCheckLanguage,
         sac.iCheckTranslation2, debugTag]));
     end;
   end;

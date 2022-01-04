@@ -3,9 +3,9 @@
 // Use, modification and distribution is subject to the MIT License
 // https://raw.githubusercontent.com/barendgehrels/langbath/main/src/LICENSE
 
-// Unit to detect language errors with online tools (languagetool.org, deepl)
+// Unit to detect language errors with online tools (languagetool.org)
 
-unit lb_detect_language_errors;
+unit lb_lib_language_tool_org;
 
 {$mode objfpc}{$H+}
 
@@ -13,6 +13,26 @@ interface
 
 uses
   Classes, SysUtils, lb_language_tool_types;
+
+type
+  TLanguageToolHint = record
+    offset : integer; // It is a one-based index into the UTF8 string
+    length : integer;
+    inputPart : string;
+    replacement : string;
+    replacements : array of string;
+    message : string;
+    issueType : string;
+    categoryId : string;
+  end;
+
+  TLanguageToolCorrection = record
+    detectedLanguageCode : string;
+    detectedLanguage : string;
+    detectedLanguageConfidence : double;
+    hints : array of TLanguageToolHint;
+  end;
+
 
 // Makes a request to LanguageTool.org and returns a JSON string
 function CallLanguageToolDotOrgAPI(const language, input : string) : string;

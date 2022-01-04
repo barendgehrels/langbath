@@ -81,13 +81,13 @@ begin
 
   ini := TIniFile.Create(IniFileName);
   try
-    result.iDeepLApiUrl := ini.ReadString(KSection, 'deepl_api_url', '');
-    result.iDeepLApiKey := ini.ReadString(KSection, 'deepl_api_key', '');
+    result.iTargetLanguage := ini.ReadString(KSection, 'target_language', '');
     result.iUnsplashApiUrl := ini.ReadString(KSection, 'unsplash_api_url', '');
     result.iUnsplashApiKey := ini.ReadString(KSection, 'unsplash_api_key', '');
-    result.iTargetLanguage := ini.ReadString(KSection, 'target_language', '');
-    result.iCheckLanguage := ini.ReadString(KSection, 'check_language', '');
-    result.iViaLanguages := SplitString(ini.ReadString(KSection, 'via_languages', ''), ',');
+    result.iDeepLSettings.iApiUrl := ini.ReadString(KSection, 'deepl_api_url', '');
+    result.iDeepLSettings.iApiKey := ini.ReadString(KSection, 'deepl_api_key', '');
+    result.iDeepLSettings.iCheckLanguage := ini.ReadString(KSection, 'check_language', '');
+    result.iDeepLSettings.iViaLanguages := SplitString(ini.ReadString(KSection, 'via_languages', ''), ',');
   finally
     ini.free;
   end;
