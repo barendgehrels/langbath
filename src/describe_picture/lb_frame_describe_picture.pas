@@ -18,21 +18,29 @@ uses
 
 type
 
+  { TFrameDescribe }
+
   TFrameDescribe = class(TFrame)
     ButtonDeepL: TButton;
     ButtonLanguageTool: TButton;
     ButtonGetRandomPicture: TButton;
     EditTopic: TEdit;
+    GroupBoxPicture: TGroupBox;
     GroupBox4: TGroupBox;
-    Image2: TImage;
+    ImageUnsplash: TImage;
     Label1: TLabel;
+    Label2: TLabel;
+    LabelUserName: TLabel;
     LabelDetectedLanguage1: TLabel;
     LabelDetectedLanguage2: TLabel;
     LabelDetectedLanguage3: TLabel;
+    LabelLink: TLabel;
     MemoResult: TMemo;
     MemoInput: TMemo;
     PaintBox: TPaintBox;
     Panel1: TPanel;
+    Panel2: TPanel;
+    PanelUnsplash: TPanel;
     PanelCenter: TPanel;
     RadioButtonUnsplash: TRadioButton;
     FormalityRadioGroup: TRadioGroup;
@@ -40,6 +48,7 @@ type
     procedure ButtonLanguageToolClick(Sender: TObject);
     procedure ButtonGetRandomPictureClick(Sender: TObject);
     procedure FrameResize(Sender: TObject);
+    procedure LabelLinkClick(Sender: TObject);
     procedure PaintBoxPaint(Sender: TObject);
 
   public
@@ -60,7 +69,7 @@ implementation
 
 {$R *.lfm}
 
-uses LazUTF8, FpJson, JsonParser, Math,
+uses LazUTF8, FpJson, JsonParser, Math, LCLIntf,
   lb_lib_unsplash,
   lb_needleman_wunsch, lb_draw_text,
   lb_lib, lb_split_string_into_sentences;
@@ -82,15 +91,48 @@ begin
 end;
 
 procedure TFrameDescribe.ButtonGetRandomPictureClick(Sender: TObject);
+const debug : boolean = false;
+  subfolder = '/images';
+var r : TUnsplashRecord;
+  json, newfilename : string;
+  list : TStringList;
 begin
-  GetUnsplashPictureFromJson(CallUnsplashAPI(iSettings.iUnsplashApiUrl, iSettings.iUnsplashApiKey,
-      Image2.Width > Image2.Height, EditTopic.text), Image2.Picture);
+  if debug then
+  begin
+    list := TStringList.Create;
+    list.LoadFromFile(ConfigDir + 'from_unsplash.json');
+    json := list.Text;
+    list.free;
+  end
+  else
+  begin
+    json := CallUnsplashAPI(iSettings.iUnsplashApiUrl, iSettings.iUnsplashApiKey,
+        ImageUnsplash.Width > ImageUnsplash.Height, EditTopic.text);
+  end;
+
+  r := GetUnsplashRecordFromJson(json);
+  LabelLink.Caption := r.link;
+  LabelUserName.Caption := r.user;
+  GetUnsplashPicture(r, ImageUnsplash.Picture);
+  if forcedirectories(ConfigDir + subfolder) then
+  begin
+    newfilename := format('%s%s/%s.jpg', [ConfigDir, subfolder, r.id]);
+    try
+      ImageUnsplash.Picture.SaveToFile(newfilename);
+    except
+    end;
+  end;
 end;
 
 procedure TFrameDescribe.FrameResize(Sender: TObject);
 begin
-  Image2.Height := self.Height div 2;
+  GroupBoxPicture.Height := self.Height div 2;
   Panel1.Width := (self.Width - PanelCenter.Width) div 2;
+end;
+
+procedure TFrameDescribe.LabelLinkClick(Sender: TObject);
+begin
+  OpenURL(LabelLink.caption);
 end;
 
 

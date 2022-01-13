@@ -14,12 +14,23 @@ interface
 uses
   Classes, SysUtils, Graphics;
 
+type
+  TUnsplashRecord = record
+    id : string;
+    url : string;
+    link : string;
+    description : string;
+    user : string;
+  end;
+
 // Makes a request to Unplash and returns a JSON string
 function CallUnsplashAPI(const ApiUrl, ApiKey : string; landscape : boolean;
       const subject : string = '') : string;
 
+function GetUnsplashRecordFromJson(const Json : string) : TUnsplashRecord;
+
 // Make a request to Unsplash to get the picture referred to in the JSON string
-procedure GetUnsplashPictureFromJson(const Json : string; const picture: TPicture);
+procedure GetUnsplashPicture(const rec : TUnsplashRecord; const picture: TPicture);
 
 implementation
 
@@ -69,25 +80,34 @@ begin
   end;
 end;
 
-procedure GetUnsplashPictureFromJson(const Json : string; const picture: TPicture);
+function GetUnsplashRecordFromJson(const Json: string): TUnsplashRecord;
 var
   jsonData : TJSONData;
-  url : string;
 begin
+  Initialize(result);
+
   jsonData := GetJSON(Json);
   if jsonData = nil then exit;
 
   try
-    url := GetTagAsString(jsondata, 'urls.regular');
-    if url <> '' then
+    result.id := GetTagAsString(jsondata, 'id');
+    result.url := GetTagAsString(jsondata, 'urls.regular');
+    result.link := GetTagAsString(jsondata, 'links.html');
+    result.description := GetTagAsString(jsondata, 'description');
+    result.user := GetTagAsString(jsondata, 'user.name');
+    if result.description = '' then
     begin
-      // Use HTTP to get the picture from the URL
-      GetPictureFromUrl(url, picture);
+      result.description := GetTagAsString(jsondata, 'alt_description');
     end;
 
   finally
     jsonData.free;
   end;
+end;
+
+procedure GetUnsplashPicture(const rec : TUnsplashRecord; const picture: TPicture);
+begin
+  GetPictureFromUrl(rec.url, picture);
 end;
 
 end.
