@@ -91,10 +91,10 @@ var
   i, j: integer;
   s, sentence, term, lowerCaseTerm, base, title: string;
   totalWordCount, totalSentenceCount: integer;
-  isLowerCase: boolean;
+  isLowerCase, isCountingForFrequency: boolean;
   freqList, f2: TArrayOfFrequencyEntry;
 
-  index, rank, sumrank, countrank: integer;
+  index, rank, sumrank, countrank, maxrank: integer;
   wordsNotFound, namesNotFound: TStringList;
 
   stringCounter: TStringCounter;
@@ -121,11 +121,6 @@ begin
   sumrank := 0;
   countrank := 0;
 
-  readabilityMeasurements := TReadabilityMeasurements.Create();
-  frequencyCounter1 := TFrequencyCounter.Create(10, 500, 10000);
-  frequencyCounter2 := TFrequencyCounter.Create([2500, 5000, 7500, 10000]);
-  stringCounter := TStringCounter.Create;
-
   freqList := ReadFrequencyList(frequencyFilename, false);
 
   // All common currently gets "100"
@@ -143,6 +138,19 @@ begin
   end;
 
   SortByEntryAndRank(freqList);
+
+  if length(freqList) = 0 then
+  begin
+    exit;
+  end;
+
+  maxrank := freqList[length(freqList)-1].rank;
+
+  readabilityMeasurements := TReadabilityMeasurements.Create();
+  frequencyCounter1 := TFrequencyCounter.Create(10, 500, 10000);
+  frequencyCounter2 := TFrequencyCounter.Create([2500, 5000, 7500, 10000]);
+  stringCounter := TStringCounter.Create;
+
 
   //for i := 0 to 1000 do
   //begin
@@ -189,6 +197,7 @@ begin
                 Inc(totalWordCount);
 
                 isLowerCase := lowerCaseTerm = term;
+                isCountingForFrequency := true;
 
                 rank := 0;
                 index := FindByEntry(freqList, lowerCaseTerm);
@@ -209,6 +218,7 @@ begin
                     // 4: Not found, but it has upper case, is not the first word
                     // in a sentence, and therefore it might be a name
                     namesNotFound.add(lowerCaseTerm);
+                    isCountingForFrequency := false;
                     {$ifdef WITH_DEBUG}
                     debugList.Add(format('- Add to names-not-found: %d, "%s", "%s"',
                       [rank, lowerCaseTerm, term]));
@@ -235,6 +245,11 @@ begin
 
                   frequencyCounter1.Add(rank);
                   frequencyCounter2.Add(rank);
+                end
+                else if isCountingForFrequency then
+                begin
+                  frequencyCounter1.Add(maxrank + 1);
+                  frequencyCounter2.Add(maxrank + 1);
                 end;
               end;
 
@@ -278,7 +293,7 @@ begin
       writeln(format('Words per sentence (avg): %.2f', [totalWordCount / totalSentenceCount]));
       if countrank > 0 then
         writeln(format('Average rank            : %.2f', [sumrank / countrank]));
-      writeln(format('Words found             : %d %', [round(100 * countrank / totalWordCount)]));
+      writeln(format('Words found             : %d %%', [round(100 * countrank / totalWordCount)]));
       writeln(format('Text readability index  : %.2f', [readabilityMeasurements.TextReadabilityIndex]));
       writeln(format('Aut. readability index  : %.2f', [readabilityMeasurements.AutomatedReadabilityIndex]));
       writeln(format('Coleman Liau index      : %.2f', [readabilityMeasurements.ColemanLiauIndex]));

@@ -149,6 +149,14 @@ begin
     for i := 0 to list.Count - 1 do
     begin
       ar := SplitString(list[i], #9);
+      if length(ar) = 1 then
+      begin
+        ar := SplitString(list[i], ' ');
+      end;
+      if length(ar) = 2 then
+      begin
+        SetLength(ar, 3);
+      end;
       if length(ar) = 3 then
       begin
         rank := strtoint(ar[0]);
