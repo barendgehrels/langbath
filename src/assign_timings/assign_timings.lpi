@@ -35,7 +35,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="19">
+    <Units Count="20">
       <Unit0>
         <Filename Value="assign_timings.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -131,6 +131,10 @@
         <Filename Value="..\shared\lb_replace_names_in_translations.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
+      <Unit19>
+        <Filename Value="..\common\lb_lib_ini.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit19>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -162,7 +166,7 @@
     </Linking>
     <Other>
       <CompilerMessages>
-        <IgnoredMessages idx5024="True"/>
+        <IgnoredMessages idx6058="True" idx5024="True"/>
       </CompilerMessages>
     </Other>
   </CompilerOptions>

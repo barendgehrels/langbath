@@ -65,14 +65,6 @@ uses LCLIntf, LCLType, ComCtrls, lb_read_timings, lb_write_timings,
   lb_form_edit_book_settings, lb_bass,
   lb_lib;
 
-
-function IniFileName : string;
-const
-  KIniFile : string = 'langbath.ini';
-begin
-  result := ConfigDir + KIniFile;
-end;
-
 procedure TFormAssignTimes.FormCreate(Sender: TObject);
 begin
   {$IFDEF MSWINDOWS}

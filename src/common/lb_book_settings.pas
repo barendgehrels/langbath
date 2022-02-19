@@ -55,7 +55,7 @@ operator = (const left, right: TBookSettings) : boolean;
 
 implementation
 
-uses IniFiles, SysUtils;
+uses IniFiles, SysUtils, lb_lib_ini;
 
 const
   // General settings
@@ -85,21 +85,6 @@ const
   KEntryPauseRepeat : string = 'pause.repeat';
   KEntryPauseBeforeStart : string = 'pause.before_start';
 
-function IniReadInteger(ini : TIniFile; const section, entry : string; def : integer) : integer;
-var s : string;
-begin
-  result := def;
-  s := ini.ReadString(section, entry, IntToStr(def));
-  TryStrToInt(s, result);
-end;
-
-function IniReadFloat(ini : TIniFile; const section, entry : string; def : double) : double;
-var s : string;
-begin
-  result := def;
-  s := ini.ReadString(section, entry, FloatToStr(def));
-  TryStrToFloat(s, result);
-end;
 
 function ReadBookSettings(const iniFileName, ProjectId : string) : TBookSettings;
 var ini : TIniFile;
@@ -241,10 +226,14 @@ begin
 
     for i := 0 to sections.count - 1 do
     begin
-      s := trim(StringReplace(sections[i], KSection + '.', '', []));
-      if s <> '' then
+      s := sections[i];
+      if IsSection(s, KSection + '.') then
       begin
-        result.Append(s);
+        s := trim(StringReplace(sections[i], KSection + '.', '', []));
+        if s <> '' then
+        begin
+          result.Append(s);
+        end;
       end;
     end;
   finally
@@ -254,18 +243,6 @@ begin
 end;
 
 function ReadSettingsToStringList(const iniFileName, ProjectId : string; items : TStrings) : integer;
-
-  function IsSection(var s : string; const start : string) : boolean;
-  var len : integer;
-  begin
-    len := length(start);
-    result := copy(s, 1, len) = start;
-    if result then
-    begin
-      delete(s, 1, len);
-    end;
-  end;
-
 var ini : TIniFile;
   sections : TStringList;
   i : integer;

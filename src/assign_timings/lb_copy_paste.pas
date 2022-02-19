@@ -7,7 +7,9 @@ interface
 uses
   Classes, SysUtils, ComCtrls;
 
+// Converts a column of a listview into a stringlist
 function SelectionAsStringList(list : TListView; many : boolean; subItemIndex, maxChars : integer) : TStringList;
+
 procedure PasteList(listView : TListView; list : TStrings; many : boolean; subItemIndex : integer);
 procedure CorrectNames(listView : TListView; list : TStrings; index1, index2 : integer);
 
@@ -16,6 +18,13 @@ implementation
 uses LazUtf8, lb_ui_lib, lb_replace_names_in_translations;
 
 function SelectionAsStringList(list : TListView; many : boolean; subItemIndex, maxChars : integer) : TStringList;
+
+  function ItemToString(item : TListItem) : string;
+  begin
+    if subItemIndex < item.SubItems.Count then result := item.SubItems[subItemIndex]
+    else result := '';
+  end;
+
 var item : TListItem;
   i, itemIndex : integer;
   length : integer;
@@ -25,9 +34,9 @@ begin
   item := list.Selected;
   while item <> nil do
   begin
-    result.Add(item.SubItems[subItemIndex]);
+    result.Add(ItemToString(item));
     itemIndex := item.Index;
-    length := length + Utf8Length(item.SubItems[subItemIndex]);
+    length := length + Utf8Length(ItemToString(item));
     item := list.GetNextItem(item, sdBelow, [lisSelected]);
   end;
   if many and (subItemIndex = 1) then
@@ -35,9 +44,9 @@ begin
     for i := itemIndex + 1 to list.Items.Count - 1 do
     begin
       item := list.items[i];
-      length := length + Utf8Length(item.SubItems[subItemIndex]);
+      length := length + Utf8Length(ItemToString(item));
       if length > maxChars then exit;
-      result.Add(item.SubItems[subItemIndex]);
+      result.Add(ItemToString(item));
     end;
   end;
 end;
