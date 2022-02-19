@@ -55,7 +55,7 @@ Coleman Liau index          : 8.67
 LIX (läsbarhetsindex)       : 36.04
 ```
 
-It also works for Russian texts (but the language does not really matter).
+It, of course, also works for Russian texts, the language does not really matter.
 For example [Dunno on the Moon](https://en.wikipedia.org/wiki/Dunno_on_the_Moon),
 which is children or young adult literature:
 
@@ -70,15 +70,15 @@ LIX (läsbarhetsindex)       : 46.63
 And for [The Brothers Karamazov](https://en.wikipedia.org/wiki/The_Brothers_Karamazov)
 
 ```
-Dostojevsky - Brothers Karamazov
+Dostojevsky - The Brothers Karamazov
 Text readability index      : 12.00
 Automated readability index : 8.69
 Coleman Liau index          : 10.63
 LIX (läsbarhetsindex)       : 41.48
 ```
 
-Note that, surprisingly, for the lower three measurements, Dunno to the Moon is considered as more difficult
-than Dostojevsky. For me that was kind of a blocker to use these existing measures.
+Note that, surprisingly, for the lower three measurements, Dunno on the Moon is considered as more difficult
+than The Brothers Karamazov. For me that was kind of a blocker to use these existing measures.
 So for that reason I created another readability index,
 the **Text readability index** which does not have that failure. It is a bit more complex than the other
 measures, because it's based on word and sentence length but also the frequency of long words and
@@ -111,7 +111,7 @@ Words top 10000         : 83 %
 ```
 and
 ```
-Dostojevsky - Brothers Karamazov
+Dostojevsky - The Brothers Karamazov
 Number of sentences     : 18845
 Words per sentence (avg): 14.66
 Average rank            : 1903.97
@@ -128,7 +128,7 @@ Words top  7500         : 81 %
 Words top 10000         : 82 %
 ```
 
-So Brothers Karamazov is in the end kind of comparable to Dunno on the Moon, in
+So *The Brothers Karamazov* is in the end kind of comparable to *Dunno on the Moon*, in
 terms of number of words and frequency lists.
 
 The frequency list, a text file, should have the following format:
@@ -150,10 +150,10 @@ The frequency list, a text file, should have the following format:
 ## describe_picture
 This is a **User Interface** tool. It lets the user describe a random picture in
 another language and make corrections or suggestions automatically. To do that,
-it translates the entered text in a comparable language (the *via* language), and then it translates
+it translates the entered text into a comparable language (the *via* language), and then it translates
 it back. The translation back might be more correct than the entered text, and
-it visually presents that comparison. You can also use two *via* languages, then
-it selects the closest option, which can work better. It often works impressive.
+the tool visually presents that comparison. You can also use two or more *via* languages, then
+the tool selects the closest option. It often works impressive.
 
 For example:
 ![describe picture](doc/langbath_describe_picture.png)
@@ -173,7 +173,21 @@ check_language=NL
 ```
 
 ## memorize_text
-This is a **User Interface** tool. It lets the user memorize poems or short texts.
+This is a **User Interface** tool. It helps the user to memorize poem details or short texts.
+It presents a visual comparison, and the calculated Levenshtein distance of the entered text and the detected
+part of the text. This tool is relatively new and not yet 100% worked out.
+It is not necessary to enter the whole poem (or text), a part is also fine.
+
+For example, below, the user types (by heart, is the intention) a poem on the left side. He or she then presses
+the **Compare** button. Then the corrected text is presented on the right side. All
+the red parts show errors or issues in the entered text.
+
+![memorize text](doc/langbath_memorize_text.png)
+
+*(This example is made-up, I'm not learning this poem (**Aubade** by **Philip Larkin**). But I have to learn a few
+Russian poems and I first use [this](https://ranka.mobi/poem/index.html) tool, it works perfectly.
+That tool learns you the poem line by line, and uses the first letters of each word.
+As a follow-up phase, to get more details, the **memorize_text** tool works quite convenient for me.)*
 
 ## common units
 Units useful on its own are:

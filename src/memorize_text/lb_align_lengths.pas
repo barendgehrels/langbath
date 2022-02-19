@@ -14,11 +14,12 @@ implementation
 uses LazUTF8, lb_lib_string;
 
 function AlignLengthsAtBack(const reference, entered: string): string;
-var minD, d, len, bestLen : integer;
+var minD, d, len, lenEntered, bestLen : integer;
   s : string;
 begin
   bestLen := -1;
   minD := -1;
+  lenEntered := Utf8Length(entered);
   len := Utf8Length(reference);
   while len > 0 do
   begin
@@ -35,7 +36,9 @@ begin
       exit;
     end;
     // TODO: move back until last space/tab/CR/LF
-    dec(len);
+    if d > lenEntered div 2 then dec(len, 100)
+    else if d > lenEntered div 10 then dec(len, 10)
+    else dec(len);
   end;
 end;
 

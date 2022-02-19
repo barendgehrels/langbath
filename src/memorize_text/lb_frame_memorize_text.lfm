@@ -50,7 +50,7 @@ object FrameMemorizeText: TFrameMemorizeText
     ClientWidth = 179
     TabOrder = 1
     object ButtonCompare: TButton
-      Left = 13
+      Left = 11
       Height = 25
       Top = 224
       Width = 150

@@ -3,7 +3,7 @@ object FormMemorizeText: TFormMemorizeText
   Height = 596
   Top = 114
   Width = 954
-  Caption = 'Describe the picture'
+  Caption = 'Memorize Text'
   Constraints.MinHeight = 400
   Constraints.MinWidth = 400
   OnCreate = FormCreate
