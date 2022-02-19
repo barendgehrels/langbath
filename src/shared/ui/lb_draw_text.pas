@@ -79,8 +79,24 @@ begin
 end;
 
 procedure DrawTextConsideringAlignment(canvas : TCanvas; const reference, entered : string);
-var currentX, currentY, w, i, len : integer;
-  ch1, ch2 : string;
+
+  function Equivalent(const s1, s2 : string) : boolean;
+  begin
+    result := RussianReplaceEquivalents(s1) = RussianReplaceEquivalents(s2);
+  end;
+
+  // Returns true if both are punctuations, or the reference is a punctuation
+  // and the entered was missing (= '*' now hardcoded)
+  function PunctuationDifference(const r, e : string) : boolean;
+  begin
+    result := IsPunctuation(r)
+      and (IsPunctuation(e) or (e = '*'))
+  end;
+
+const extra = 0; // unused
+var currentX, currentY, i, len : integer;
+  charRef, charEntered : string;
+  color : TColor;
 begin
   len := UTF8Length(reference);
   if len <> UTF8Length(entered) then exit;
@@ -88,35 +104,54 @@ begin
   currentX := 3;
   currentY := 3;
 
-  for i := 1 to len do
+  i := 1;
+  while i <= len do
   begin
-    ch1 := utf8copy(reference, i, 1);
-    ch2 := utf8copy(entered, i, 1);
-    w := canvas.TextWidth(ch1);
-    currentX := currentX + w;
-    if (ch1 = ' ') and (currentX + TextWidthUntilSpace(canvas, reference, i + 1) > canvas.Width) then
+    charRef := utf8copy(reference, i, 1);
+    charEntered := utf8copy(entered, i, 1);
+    if (charRef = #13) or (charEntered = #13) then
     begin
+      // Honour newline
       currentX := 3;
       currentY := currentY + canvas.Font.Height;
-      canvas.moveto(currentX, currentY);
-    end;
 
-    if RussianReplaceEquivalents(ch1) = RussianReplaceEquivalents(ch2) then
-    begin
-      canvas.Font.Color := clNavy;
-      // It's either the same, or the entered text is accepted.
-      // So display from entered text
-      canvas.TextOut(canvas.PenPos.X, canvas.PenPos.Y, ch2);
+      if (i < len) and (utf8copy(reference, i + 1, 1) = #10) then
+      begin
+        // Skip the second char of a #13#10 sequence
+        inc(i);
+      end;
     end
-    else
+    else if (charRef = ' ') and (currentX + TextWidthUntilSpace(canvas, reference, i + 1) > canvas.Width) then
     begin
-      canvas.Font.Color := clRed;
-      canvas.TextOut(canvas.PenPos.X, canvas.PenPos.Y, ch1);
+      // Word wrap
+      currentX := 3;
+      currentY := currentY + canvas.Font.Height;
     end;
-  end;
 
-  canvas.Font.Color := clNavy;
-  canvas.Font.Style := [fsBold];
+    color := clNavy;
+    if charRef <> charEntered then
+    begin
+      // It's not the same. Use color according to severity
+      if UTF8LowerString(charRef) = UTF8LowerString(charEntered) then color := clNavy
+      else if Equivalent(charRef, charEntered) then color := clNavy
+      else if PunctuationDifference(charRef, charEntered) then color := clTeal
+      else color := clRed;
+    end;
+
+    // Display from reference text (it might show capitals, for example)
+    // Also in case of errors, display from reference test.
+
+    // Somehow "j" is covering parts of the i/k before... try to enhance that.
+    inc(currentX, 1);
+    if charRef = 'j' then inc(currentX, 1);
+
+    canvas.moveto(currentX, currentY);
+    canvas.Font.Color := color;
+    canvas.TextOut(canvas.PenPos.X, canvas.PenPos.Y, charRef);
+    currentX := currentX + canvas.TextWidth(charRef) + extra;
+
+    inc(i);
+  end;
 end;
 
 end.
