@@ -64,6 +64,7 @@ begin
 
   //execsql('PRAGMA journal_mode = WAL'); // not much better, though some sites say so
   //execsql('PRAGMA locking_mode = EXCLUSIVE'); // the same
+
   execsql('PRAGMA synchronous = OFF'); // much much better
   execsql('PRAGMA cache_size = -100000'); // the higher the better
 end;

@@ -28,7 +28,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, lb_form_describe_picture, lb_lib_language_tool_org,
   lb_frame_describe_picture, lb_lib,
-  lb_describe_picture_settings, lb_lib_deepl, lb_lib_json;
+  lb_describe_picture_settings, lb_lib_deepl, lb_lib_json, lb_lib_storage;
 
 {$R *.res}
 

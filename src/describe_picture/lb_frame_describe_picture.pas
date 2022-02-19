@@ -72,7 +72,7 @@ implementation
 uses LazUTF8, FpJson, JsonParser, Math, LCLIntf,
   lb_lib_unsplash,
   lb_needleman_wunsch, lb_draw_text,
-  lb_lib, lb_split_string_into_sentences;
+  lb_config, lb_split_string_into_sentences, lb_lib_storage;
 
 constructor TFrameDescribe.Create(AOwner : TComponent; const settings : TDescribePictureSettings);
 begin
@@ -96,6 +96,7 @@ const debug : boolean = false;
 var r : TUnsplashRecord;
   json, newfilename : string;
   list : TStringList;
+  storage : TStorage;
 begin
   if debug then
   begin
@@ -119,6 +120,12 @@ begin
     newfilename := format('%s%s/%s.jpg', [ConfigDir, subfolder, r.id]);
     try
       ImageUnsplash.Picture.SaveToFile(newfilename);
+      storage := TStorage.Create;
+      try
+        storage.AddPicture(EditTopic.text, newfilename);
+      finally
+        storage.free;
+      end;
     except
     end;
   end;
