@@ -19,7 +19,7 @@ function QueryAsString(cn : TSqlConnection; const sql : string;
 
 implementation
 
-uses variants;
+uses variants, LazLoggerBase;
 
 // Function to execute an SQL. It's similar to cn.ExecuteDirect, but it returns the number of
 // rows affected.
@@ -75,10 +75,16 @@ begin
     begin
       if not TryStrToInt(v, result) then
       begin
+        DebugLn('NOT SUCCESSFUL');
         result := defaultResult;
       end;
+    end
+    else
+    begin
+      DebugLn('IT IS NULL sql: ' + format(sql, args));
     end;
   except
+    on e : Exception do DebugLn(e.message);
     // Ignore any exception (null->string->integer for example)
   end;
 end;

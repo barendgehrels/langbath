@@ -47,10 +47,10 @@ procedure TFormDescribePicture.FormCreate(Sender: TObject);
 begin
   WindowState := wsMaximized;
 
-  iFrame := TFrameDescribe.Create(self, ReadSettings);
+  iFrame := TFrameDescribe.Create(self);
   iFrame.Parent := self;
   iFrame.Align := alClient;
-
+  iFrame.SetSettings(ReadSettings);
 end;
 
 procedure TFormDescribePicture.FormDestroy(Sender: TObject);

@@ -39,7 +39,7 @@ implementation
 
 {$R *.lfm}
 
-uses Clipbrd, lb_lib;
+uses Clipbrd;
 
 procedure TFormPaste.PanelClientResize(Sender: TObject);
 var h : integer;

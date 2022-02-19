@@ -52,8 +52,10 @@ type
     procedure PaintBoxPaint(Sender: TObject);
 
   public
-    constructor Create(AOwner : TComponent; const settings : TDescribePictureSettings);
+    constructor Create(AOwner : TComponent); override;
     destructor Destroy; override;
+
+    procedure SetSettings(const settings : TDescribePictureSettings);
   private
     iLtHints : TLanguageToolCorrection;
     iDlCorrection : string;
@@ -74,10 +76,9 @@ uses LazUTF8, FpJson, JsonParser, Math, LCLIntf,
   lb_needleman_wunsch, lb_draw_text,
   lb_config, lb_split_string_into_sentences, lb_lib_storage;
 
-constructor TFrameDescribe.Create(AOwner : TComponent; const settings : TDescribePictureSettings);
+constructor TFrameDescribe.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  iSettings := settings;
   FormalityRadioGroup.ItemIndex := 0;
   LabelDetectedLanguage1.Caption := '';
   LabelDetectedLanguage2.Caption := '';
@@ -88,6 +89,11 @@ end;
 destructor TFrameDescribe.Destroy;
 begin
   inherited Destroy;
+end;
+
+procedure TFrameDescribe.SetSettings(const settings: TDescribePictureSettings);
+begin
+  iSettings := settings;
 end;
 
 procedure TFrameDescribe.ButtonGetRandomPictureClick(Sender: TObject);

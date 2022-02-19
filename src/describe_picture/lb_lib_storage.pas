@@ -18,7 +18,7 @@ type
 
 implementation
 
-uses SqlDb, lb_lib, lb_sql_ddl, lb_db_manager, lb_config;
+uses SqlDb, lb_sql_ddl, lb_db_manager, lb_config;
 
 { TStorage }
 

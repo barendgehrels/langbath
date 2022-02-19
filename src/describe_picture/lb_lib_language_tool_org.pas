@@ -12,7 +12,7 @@ unit lb_lib_language_tool_org;
 interface
 
 uses
-  Classes, SysUtils, lb_language_tool_types;
+  Classes, SysUtils;
 
 type
   TLanguageToolHint = record
