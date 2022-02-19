@@ -18,7 +18,7 @@ var sub : TJsonData;
 begin
   result := '';
   sub := jsonData.FindPath(tag);
-  if sub <> nil then
+  if (sub <> nil) and not sub.IsNull then
   begin
     result := sub.AsString;
   end;
@@ -29,7 +29,7 @@ var sub : TJsonData;
 begin
   result := -1;
   sub := jsonData.FindPath(tag);
-  if sub <> nil then
+  if (sub <> nil) and not sub.IsNull then
   begin
     result := sub.AsInteger;
   end;
@@ -40,7 +40,7 @@ var sub : TJsonData;
 begin
   result := -1;
   sub := jsonData.FindPath(tag);
-  if sub <> nil then
+  if (sub <> nil) and not sub.IsNull then
   begin
     result := sub.AsFloat;
   end;

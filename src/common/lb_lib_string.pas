@@ -9,9 +9,7 @@ uses
 
 function HasEquivalents(const s : string) : boolean;
 function ReplaceEquivalents(const s : string) : string;
-
-function RussianReplaceAccents(const s : string) : string;
-function RussianReplaceEquivalents(const s : string) : string;
+function ReplaceAccents(const s : string) : string;
 
 function RemoveQuotes(const s : string) : string;
 function RemovePunctuation(const s : string) : string;
@@ -21,6 +19,10 @@ function DisplayString(const s : string) : string;
 
 // Removes accents, quotes, punctuation, and makes it lower case
 function BareString(const s : string) : string;
+
+// Barestring + remote all dots and CR/LF
+function CleanString(const s : string) : string;
+
 function Quoted(const s : string) : string;
 
 function ArrayAsString(const a : array of integer) : string;
@@ -29,19 +31,53 @@ function ArrayAsString(const a : array of string) : string;
 function CreateBagOfWords(const s : string) : TArrayOfString;
 function InternationalSplitCharacters(const s : string) : TArrayOfString;
 
+// Russian specific (in general, use the versions without "Russian")
+function RussianReplaceAccents(const s : string) : string;
+function RussianReplaceEquivalents(const s : string) : string;
+
 function LevenshteinDistance(const s, t : string): integer;
 
 function IsCapital(const s : string) : boolean;
+
+// Returns true if it is considered as a punctuation character
+// This includes brackets, dot, comma, (semi)colon, dash, quote, exclamation/question mark
+function IsPunctuation(const s : string) : boolean;
+function IsSpacing(const s : string) : boolean;
 
 implementation
 
 uses LazUTF8, Math;
 
-const CSingleQuote : char = '''';
+const
+  CSingleQuote : char = '''';
+
+  // Declare punctuations (no dots yet, because they are more special for example in
+  // separating strings - but this is to be reconsidered)
+  punctuations : array of string = (':', ';', ',', '!', '?', '»', '«',
+                                          '(', ')', '[', ']', '{', '}',
+                                          '—', '—', '–', '"', '''');
+
 
 function IsCapital(const s : string) : boolean;
 begin
   result := s = UTF8UpperString(s);
+end;
+
+function IsPunctuation(const s: string): boolean;
+var i : integer;
+begin
+  result := true;
+  if s = '.' then exit;
+  for i := low(punctuations) to high(punctuations) do
+  begin
+    if s = punctuations[i] then exit;
+  end;
+  result := false;
+end;
+
+function IsSpacing(const s: string): boolean;
+begin
+  result := (s = #13) or (s = #10) or (s = #9) or (s = ' ');
 end;
 
 function RussianReplaceAccents(const s : string) : string;
@@ -59,13 +95,17 @@ begin
   result := StringReplace(result, 'ы́', 'ы', [rfReplaceAll]);
   result := StringReplace(result, 'ю́', 'ю', [rfReplaceAll]);
   result := StringReplace(result, 'я́', 'я', [rfReplaceAll]);
-  result := StringReplace(result, '''', '', [rfReplaceAll]);
 end;
 
 // Replaces Russian ё with е because in most books/texts it's omitted.
 function RussianReplaceEquivalents(const s : string) : string;
 begin
   result := StringReplace(s, 'ё', 'е', [rfReplaceAll]);
+end;
+
+function ReplaceAccents(const s : string) : string;
+begin
+  result := RussianReplaceAccents(s);
 end;
 
 function ReplaceEquivalents(const s : string) : string;
@@ -91,9 +131,6 @@ begin
 end;
 
 function RemovePunctuation(const s : string) : string;
-const punctuations : array of string = (':', ';', ',', '!', '?', '»', '«',
-                                        '(', ')', '[', ']', '{', '}',
-                                        '—', '–', '"', '''');
 var i : integer;
 begin
   result := s;
@@ -123,6 +160,14 @@ function BareString(const s : string) : string;
 begin
   result := RemovePunctuation(RemoveQuotes(
       RussianReplaceEquivalents(RussianReplaceAccents(UTF8LowerString(s)))));
+end;
+
+function CleanString(const s : string) : string;
+begin
+  result := StringReplace(s, #13, ' ', [rfReplaceAll]);
+  result := StringReplace(result, #10, ' ', [rfReplaceAll]);
+  result := StringReplace(result, '.', ' ', [rfReplaceAll]);
+  result := BareString(result);
 end;
 
 function DisplayString(const s : string) : string;

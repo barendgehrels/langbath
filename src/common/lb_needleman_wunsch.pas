@@ -46,7 +46,8 @@ procedure AlignWithNeedlemanWunsch (const A, B: string; const Aligner : string;
   // The higher the result value, the more similar they are
   function S(const s1, s2: String): integer;
   begin
-    if (s1 = ' ') and (s2 = ' ') then result := 20
+    if UTF8LowerString(s1) = UTF8LowerString(s2) then result := 50
+    else if (s1 = ' ') and (s2 = ' ') then result := 20
     else if (s1 = 'т') and (s2 = 'т') then result := 15
     else if s1 = s2 then result := 10
     else if IsVowel(s1) and IsVowel(s2) then result := 9
