@@ -16,18 +16,15 @@ uses
 
 type TArrayOfString = array of string;
 
-function ConfigDir : string;
-function AssureConfigFolder : boolean;
 function SplitTimings(out a, b : double; out r : integer; const s : string) : boolean;
 function SplitString(s : string; sep : char) : TArrayOfString;
 function RepairAndSplitString(s : string; sep, quote : char) : TArrayOfString;
 
-// NOTE: it's slow.
 procedure Log(const s : string; DoWrite : boolean = false);
 
 implementation
 
-var gLogLock: TRTLCriticalSection;
+uses LazLoggerBase;
 
 function SplitString(s : string; sep : char) : TArrayOfString;
 var p, n : integer;
@@ -110,60 +107,10 @@ begin
   end;
 end;
 
-function ConfigDir : string;
-begin
-  // Put all configuration of all programs in the suite
-  // in just one place: (windows /users/xxx/AppData/Local/langbath/)
-  result := StringReplace(GetAppConfigDir(false), ApplicationName, 'langbath',
-         [rfReplaceAll, rfIgnoreCase])
-end;
-
-function AssureConfigFolder : boolean;
-var folder : string;
-begin
-  folder := ConfigDir;
-  result := DirectoryExists(folder);
-  if not result then result := CreateDir (folder);
-end;
 
 procedure Log(const s : string; DoWrite : boolean);
-var filename : string;
-  txt : TextFile;
-  exists : boolean;
-  hs : THeapStatus;
 begin
-  hs := GetHeapStatus;
-
-  if doWrite then
-  begin
-    writeln(inttostr(hs.TotalAllocated) + ' ' + s);
-  end;
-  EnterCriticalSection(gLogLock);
-  try
-
-    if not AssureConfigFolder then exit;
-
-    filename := ConfigDir + 'langbath.log';
-
-    exists := FileExists(filename);
-    AssignFile(txt, filename);
-    if exists then Append(txt) else Rewrite(txt);
-    WriteLn(txt, inttostr(hs.TotalAllocated) + ' ' + s);
-    CloseFile(txt);
-  finally
-    LeaveCriticalSection(gLogLock);
-  end;
-end;
-
-initialization
-begin
-  Initialize(gLogLock);
-  InitCriticalSection(gLogLock);
-end;
-
-finalization
-begin
-  DoneCriticalSection(gLogLock);
+  DebugLn(s);
 end;
 
 end.

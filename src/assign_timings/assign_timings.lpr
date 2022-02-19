@@ -17,13 +17,14 @@ uses
   Forms, lb_form_assign_timings, lb_write_timings, lb_ui_lib, lb_book_settings,
   lb_time_optimizer, lb_form_edit_book_settings, lb_form_wave_form,
   lb_form_repeat_settings, lb_form_paste, lb_repeat_settings, lb_copy_paste,
-  lb_listview_const, lb_replace_names_in_translations, lb_lib_ini
+  lb_listview_const, lb_replace_names_in_translations, lb_lib_ini, lb_config
   { you can add units after this }
   ;
 
 {$R *.res}
 
 begin
+  Randomize;
   RequireDerivedFormResource:=True;
   Application.Title:='langbath';
   Application.Scaled:=True;

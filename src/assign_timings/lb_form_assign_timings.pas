@@ -63,7 +63,7 @@ implementation
 
 uses LCLIntf, LCLType, ComCtrls, lb_read_timings, lb_write_timings,
   lb_form_edit_book_settings, lb_bass,
-  lb_lib;
+  lb_lib, lb_config;
 
 procedure TFormAssignTimes.FormCreate(Sender: TObject);
 begin

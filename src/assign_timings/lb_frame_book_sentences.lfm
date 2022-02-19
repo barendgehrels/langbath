@@ -496,17 +496,6 @@ object FrameReadSentences: TFrameReadSentences
         OnChange = RadioButtonNoneChange
         TabOrder = 1
       end
-      object Shape1: TShape
-        Left = 1136
-        Height = 30
-        Top = 125
-        Width = 30
-        Brush.Color = clYellow
-        Pen.Color = clSilver
-        Pen.Width = 0
-        OnMouseDown = Shape1MouseDown
-        Shape = stStar
-      end
       object EditSearch: TEdit
         Left = 576
         Height = 23
@@ -1492,6 +1481,15 @@ object FrameReadSentences: TFrameReadSentences
         Caption = 'Split translation'
         OnClick = ButtonSplitTranslationClick
         TabOrder = 12
+      end
+      object Button1: TButton
+        Left = 1128
+        Height = 25
+        Top = 131
+        Width = 75
+        Caption = 'Random'
+        OnClick = Button1Click
+        TabOrder = 13
       end
     end
   end

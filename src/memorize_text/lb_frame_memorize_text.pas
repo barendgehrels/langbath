@@ -55,17 +55,7 @@ implementation
 
 uses LazUTF8, LCLIntf, Dialogs,
   lb_needleman_wunsch, lb_align_lengths, lb_draw_text,
-  lb_lib, lb_lib_string;
-
-
-procedure DebugWriteString(const s, f : string);
-var list : TStringList;
-begin
-  list := TStringList.Create;
-  list.text := s;
-  list.SaveToFile(ConfigDir + f + '.txt');
-  list.free;
-end;
+  lb_lib, lb_lib_string, lb_config;
 
 function ReadStringsFromFile(const f : string; hint : boolean) : TStringList;
 var list : TStringList;
@@ -150,8 +140,6 @@ begin
     begin
       AlignWithNeedlemanWunsch(correction, entered, '*', -5, alignment1, alignment2);
 
-      //DebugWriteString(CleanString(correction), 'correction');
-      //DebugWriteString(CleanString(entered), 'entered');
       d := LevenshteinDistance(CleanString(correction), CleanString(entered));
       edit1.text := Inttostr(d);
     end;

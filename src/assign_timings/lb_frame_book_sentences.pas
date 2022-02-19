@@ -37,6 +37,7 @@ type
   { TFrameReadSentences }
 
   TFrameReadSentences = class(TFrame)
+    Button1: TButton;
     ButtonSplitTranslation: TButton;
     ButtonSplitTarget: TButton;
     ButtonPaste: TSpeedButton;
@@ -68,7 +69,6 @@ type
     RadioButton5: TRadioButton;
     RadioButtonNone: TRadioButton;
     RadioGroupPlay: TRadioGroup;
-    Shape1: TShape;
     ButtonWaveForm: TSpeedButton;
     ButtonRepeatSettings: TSpeedButton;
     ButtonMerge: TSpeedButton;
@@ -80,6 +80,7 @@ type
     TimerRepeat: TTimer;
     TimerState: TTimer;
     TrackBarAllSound: TTrackBar;
+    procedure Button1Click(Sender: TObject);
     procedure ButtonPasteClick(Sender: TObject);
     procedure ButtonRepeatSettingsClick(Sender: TObject);
     procedure ButtonSearchClick(Sender: TObject);
@@ -107,8 +108,6 @@ type
     procedure ButtonStopClick(Sender: TObject);
     procedure RadioButtonNoneChange(Sender: TObject);
     procedure RadioButtonRatingChange(Sender: TObject);
-    procedure Shape1MouseDown(Sender: TObject; Button: TMouseButton;
-      Shift: TShiftState; X, Y: Integer);
   private
 
     iEditTimes : boolean;
@@ -822,6 +821,33 @@ begin
   end;
 end;
 
+procedure TFrameReadSentences.Button1Click(Sender: TObject);
+var trialCount, index : integer;
+  item : TListItem;
+  pos1, pos2 : double;
+begin
+  // EXPERIMENTAL
+  trialCount := 0;
+  repeat
+    inc(trialCount);
+    index := Random(listViewSentences.items.Count);
+
+    item := listViewSentences.items[index];
+
+    if (item <> nil)
+    and (item.SubItems.Count > KColumnTimingEnd)
+    and TryStrToFloat(item.Caption, pos1)
+    and TryStrToFloat(item.SubItems[KColumnTimingEnd], pos2)
+    then
+    begin
+      iBass.PlaySelection(pos1, pos2);
+      showmessage(item.SubItems[KColumnTarget]);
+      exit;
+    end;
+  until trialCount > 100;
+  // END EXPERIMENTAL
+end;
+
 procedure TFrameReadSentences.TimerStateOnTimer(Sender: TObject);
   function log10(v : double): double;
   begin
@@ -954,12 +980,6 @@ begin
     item.SubItems[KColumnRating] := inttostr((sender as TRadioButton).Tag);
     SetTimesDirty(true);
   end;
-end;
-
-procedure TFrameReadSentences.Shape1MouseDown(Sender: TObject;
-  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  RadioButton4.Checked := true;
 end;
 
 procedure TFrameReadSentences.AssignPeriod(item : TListItem; isBegin : boolean; pos : double);

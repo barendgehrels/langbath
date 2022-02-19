@@ -38,7 +38,7 @@ procedure AnalyzeTextfile(const inputFilename, frequencyFilename,
 
 implementation
 
-uses LazUtf8, lb_lib, lb_frequency_list,
+uses LazUtf8, lb_frequency_list,
   lb_split_string_into_sentences, lb_lib_string_clean,
   lb_string_counter,
   lb_frequency_counter, lb_readability_measurements;

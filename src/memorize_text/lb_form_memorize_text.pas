@@ -37,7 +37,7 @@ implementation
 
 {$R *.lfm}
 
-uses Controls, Dialogs, Inifiles, lb_lib, lb_lib_ini;
+uses Controls, Dialogs, Inifiles, lb_config;
 
 { TFormMemorizeText }
 

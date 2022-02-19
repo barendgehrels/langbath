@@ -39,16 +39,9 @@ implementation
 
 {$R *.lfm}
 
-uses Controls, IniFiles, Dialogs, lb_lib;
+uses Controls, IniFiles, Dialogs, lb_lib, lb_config;
 
 { TFormDescribePicture }
-
-function IniFileName : string;
-const
-  KIniFile : string = 'langbath.ini';
-begin
-  result := ConfigDir + KIniFile;
-end;
 
 procedure TFormDescribePicture.FormCreate(Sender: TObject);
 begin

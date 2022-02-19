@@ -7,19 +7,11 @@ interface
 uses
   Classes, SysUtils, Inifiles;
 
-function IniFileName : string;
 function IniReadInteger(ini : TIniFile; const section, entry : string; def : integer) : integer;
 function IniReadFloat(ini : TIniFile; const section, entry : string; def : double) : double;
 function IsSection(var s : string; const start : string) : boolean;
 
 implementation
-
-uses lb_lib;
-
-function IniFileName : string;
-begin
-  result := ConfigDir + 'langbath.ini';
-end;
 
 function IniReadInteger(ini : TIniFile; const section, entry : string; def : integer) : integer;
 var s : string;
