@@ -4,11 +4,15 @@
 // https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
 
 // This unit contains a decorator for BASS, the 3rd party mp3 playing library
-//  - It only uses seconds in its interface
-//  - It uses a timer (member of this class) to stop after X seconds
-//  - With this timer, the main usage to play a small part of an mp3
+//  - It only uses seconds (time units) in its interface
 //  - Note that BASS only supports constant bitrate (CBR) mp3's, others can be played
 //    but their timings are incorrect and can change if you combine two mp3's afterwards.
+//  - Logging is deabled by default, to enable it, pass two command line parameters:
+//      --debug-enable=bass
+//      --debug-log=<file>
+//    See also https://wiki.freepascal.org/LazLogger
+
+
 unit lb_bass;
 
 {$mode objfpc}{$H+}
@@ -103,7 +107,7 @@ procedure InitBass(win : TBassOwner);
 
 implementation
 
-uses Math, lb_lib;
+uses Math, LazLoggerBase;
 
 const
   // Specifies the time for each level record.
@@ -114,6 +118,14 @@ const
 var
   gInitialized : boolean;
   gLevelLock: TRTLCriticalSection;
+  gLazLoggerGroup: PLazLoggerLogGroup;
+
+// Local function, using Lazarus debug logging
+procedure ErrorMessage(const s : string);
+begin
+  DebugLn(s);
+end;
+
 
 procedure InitBass(win: TBassOwner);
 begin
@@ -121,7 +133,7 @@ begin
   // check the correct BASS was loaded
   if (HIWORD(BASS_GetVersion) <> BASSVERSION) then
   begin
-    Log('An incorrect version of BASS.DLL was loaded');
+    ErrorMessage('An incorrect version of BASS.DLL was loaded');
     exit;
   end;
   {$endif}
@@ -129,7 +141,7 @@ begin
   // initialize BASS - default device
   if not BASS_Init(-1, 44100, 0, win, nil) then
   begin
-    Log('Can''t initialize device');
+    ErrorMessage('Can''t initialize device');
     exit;
   end;
   gInitialized := true;
@@ -153,6 +165,10 @@ begin
       iEnableGetLevels := iChannelOnlyDecode > 0;
     end
   end;
+  if iFileLoaded then
+    DebugLn(gLazLoggerGroup, 'Created BASS playing for ' + filename)
+  else
+    DebugLn(gLazLoggerGroup, 'NOT loaded BASS player for ' + filename)
 end;
 
 destructor TLbBass.Destroy;
@@ -180,7 +196,7 @@ begin
   if iFileLoaded then
   begin
     p := BASS_ChannelSeconds2Bytes(iChannel, posSeconds);
-    LOG('Play from ' + floattostr(posSeconds) + ' = ' + inttostr(p));
+    DebugLn(gLazLoggerGroup, 'Play from ' + floattostr(posSeconds) + ' = ' + inttostr(p));
     BASS_ChannelSetPosition(iChannel, p, BASS_POS_BYTE);
     BASS_ChannelPlay(iChannel, False);
   end;
@@ -407,7 +423,7 @@ begin
   begin
     EnterCriticalSection(gLevelLock);
     try
-      log('Init sampling');
+      DebugLnEnter(gLazLoggerGroup, 'Init sampling');
       b1 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, p1);
       b2 := BASS_ChannelSeconds2Bytes(iChannelOnlyDecode, p2);
 
@@ -415,8 +431,8 @@ begin
 
       bytesPerSample := min(round(samplePeriodMs * info.freq), maxBufferSize);
 
-      log(format('Start sampling %s: %f - %f (%d - %d) period: %f, batch: %d, freq: %d',
-        [info.filename, p1, p2, b1, b2, samplePeriodMs, bytesPerSample, info.freq]));
+      DebugLn(gLazLoggerGroup, format('Start sampling %s: %f - %f (%d - %d) period: %f, batch: %d, freq: %d',
+        [ExtractFileName(info.filename), p1, p2, b1, b2, samplePeriodMs, bytesPerSample, info.freq]));
 
       BASS_ChannelSetPosition(iChannelOnlyDecode, b1, BASS_POS_BYTE);
       while (BASS_ChannelIsActive(iChannelOnlyDecode) = 1) and (b1 < b2) do
@@ -427,14 +443,14 @@ begin
         BASS_ChannelGetLevelEx(iChannelOnlyDecode, @level, samplePeriodMs, BASS_LEVEL_MONO);
         inc(b1, bytesRead);
 
-        //log(format('Read: [%d] at %d = %.4f : %.4f', [bytesRead, b1, pos, level]));
+        //DebugLn(gLazLoggerGroup, format('Read: [%d] at %d = %.4f : %.4f', [bytesRead, b1, pos, level]));
         SetLength(result, n + 1);
         result[n].positionSeconds := pos;
         result[n].Level := level;
         inc(n);
       end;
     finally
-      log('End sampling');
+      DebugLnExit(gLazLoggerGroup, 'End sampling');
       LeaveCriticalSection(gLevelLock);
     end;
   end;
@@ -442,6 +458,7 @@ end;
 
 initialization
 begin
+  gLazLoggerGroup := DebugLogger.FindOrRegisterLogGroup('bass', true);
   gInitialized := false;
   InitCriticalSection(gLevelLock);
 end;
