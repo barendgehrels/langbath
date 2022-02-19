@@ -1,0 +1,134 @@
+object FrameMemorizeText: TFrameMemorizeText
+  Left = 0
+  Height = 764
+  Top = 0
+  Width = 945
+  ClientHeight = 764
+  ClientWidth = 945
+  OnResize = FrameResize
+  TabOrder = 0
+  DesignLeft = 619
+  DesignTop = 131
+  object GroupBoxEnter: TGroupBox
+    Left = 0
+    Height = 725
+    Top = 0
+    Width = 581
+    Align = alClient
+    Caption = 'Write here the text, or parts of it'
+    ClientHeight = 705
+    ClientWidth = 577
+    Constraints.MinWidth = 100
+    TabOrder = 0
+    object MemoInput: TMemo
+      Left = 0
+      Height = 705
+      Top = 0
+      Width = 577
+      Align = alClient
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clBlack
+      Font.Height = 36
+      Font.Name = 'Segoe UI'
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      OnChange = MemoInputChange
+      ParentFont = False
+      ScrollBars = ssAutoVertical
+      TabOrder = 0
+    end
+  end
+  object PanelCenter: TPanel
+    Left = 581
+    Height = 725
+    Top = 0
+    Width = 179
+    Align = alRight
+    BorderWidth = 10
+    Caption = '(dyn)'
+    ClientHeight = 725
+    ClientWidth = 179
+    TabOrder = 1
+    object ButtonCompare: TButton
+      Left = 13
+      Height = 25
+      Top = 224
+      Width = 150
+      Caption = 'Compare'
+      OnClick = ButtonCompareClick
+      TabOrder = 0
+    end
+    object Edit1: TEdit
+      Left = 16
+      Height = 23
+      Top = 272
+      Width = 80
+      TabOrder = 1
+      Text = 'Edit1'
+    end
+    object Button1: TButton
+      Left = 16
+      Height = 25
+      Top = 392
+      Width = 139
+      Caption = 'Show all hints'
+      OnClick = Button1Click
+      TabOrder = 2
+    end
+    object Memo1: TMemo
+      Left = 11
+      Height = 250
+      Top = 464
+      Width = 157
+      Align = alBottom
+      Lines.Strings = (
+        'Memo1'
+      )
+      TabOrder = 3
+    end
+  end
+  object GroupBoxImage: TGroupBox
+    Left = 760
+    Height = 725
+    Top = 0
+    Width = 185
+    Align = alRight
+    Caption = 'Comparison result'
+    ClientHeight = 705
+    ClientWidth = 181
+    TabOrder = 2
+    object PaintBox: TPaintBox
+      Left = 0
+      Height = 705
+      Top = 0
+      Width = 181
+      Align = alClient
+      Font.Height = 36
+      ParentFont = False
+      OnPaint = PaintBoxPaint
+    end
+  end
+  object Panel2: TPanel
+    Left = 0
+    Height = 39
+    Top = 725
+    Width = 945
+    Align = alBottom
+    BevelOuter = bvNone
+    BorderWidth = 7
+    ClientHeight = 39
+    ClientWidth = 945
+    TabOrder = 3
+    object ComboBoxTexts: TComboBox
+      Left = 7
+      Height = 23
+      Top = 7
+      Width = 296
+      Align = alLeft
+      ItemHeight = 15
+      OnChange = ComboBoxTextsChange
+      Style = csDropDownList
+      TabOrder = 0
+    end
+  end
+end
