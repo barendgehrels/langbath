@@ -160,17 +160,8 @@ For example:
 
 But, as often happens with automatic translations, it is not always flawless.
 For Russian I use Polish and Czechian as *via* languages.
-Configuration should be entered in the ini-file (`c:\users\YourName\AppData\Local\langbath\langbath.ini` on Windows), for example:
-```
-[describe_picture]
-unsplash_api_url=https://api.unsplash.com/photos/random
-unsplash_api_key=your key here
-deepl_api_url=https://api-free.deepl.com/v2/translate
-deepl_api_key=your key here
-target_language=RU
-via_languages=PL,CS
-check_language=NL
-```
+
+For more information, see the [details](src/describe_picture/README.md)
 
 ## memorize_text
 This is a **User Interface** tool. It helps the user to memorize poem details or short texts.
@@ -199,6 +190,14 @@ This is a **command line** tool. It reads the imported Brown word list from the 
 combines it with the OpenRussian words and word forms and writes a text file, with
 all the Brown words, by rank, followed by the words not found in the Brown list.
 This text file can be used for the **analyze_text** tool.
+
+## dictionary
+This is a **User Interface** tool. Users can see words, word forms, visual
+presentations, sentences, and train. It will be described later because it depends
+on several import steps (Open Russian, Tatoeba and more).
+
+![dictionary](doc/langbath_dictionary.png)
+
 
 ## common units
 Units useful on its own are:

@@ -1,0 +1,259 @@
+object FramePlayOneSentence: TFramePlayOneSentence
+  Left = 0
+  Height = 667
+  Top = 0
+  Width = 1112
+  ClientHeight = 667
+  ClientWidth = 1112
+  OnResize = FrameResize
+  TabOrder = 0
+  DesignLeft = 422
+  DesignTop = 177
+  object ListSentences: TListView
+    Left = 472
+    Height = 506
+    Top = 0
+    Width = 640
+    Align = alClient
+    Columns = <    
+      item
+        Caption = 'Sentence'
+        MinWidth = 300
+        Width = 300
+      end    
+      item
+        Caption = 'Translation'
+        Width = 100
+      end    
+      item
+        Caption = 'Author'
+        MinWidth = 150
+        Width = 150
+      end    
+      item
+        Caption = 'Title'
+        MinWidth = 150
+        Width = 150
+      end    
+      item
+        Caption = 'Rating'
+      end    
+      item
+        Caption = 'Id'
+        Width = 100
+      end    
+      item
+        Caption = 'Id'
+        Width = 100
+      end>
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -19
+    Font.Name = 'Segoe UI'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    HideSelection = False
+    ParentFont = False
+    ReadOnly = True
+    RowSelect = True
+    TabOrder = 0
+    ViewStyle = vsReport
+    OnResize = ListSentencesResize
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 506
+    Top = 0
+    Width = 472
+    Align = alLeft
+    BevelOuter = bvNone
+    ClientHeight = 506
+    ClientWidth = 472
+    Color = 11796479
+    ParentColor = False
+    TabOrder = 1
+    object PanelEmpty: TPanel
+      Left = 0
+      Height = 90
+      Top = 416
+      Width = 472
+      Align = alBottom
+      BevelOuter = bvNone
+      ClientHeight = 90
+      ClientWidth = 472
+      TabOrder = 0
+      object Panel5: TPanel
+        Left = 0
+        Height = 90
+        Top = 0
+        Width = 472
+        Align = alClient
+        ClientHeight = 90
+        ClientWidth = 472
+        Color = 11796479
+        ParentColor = False
+        TabOrder = 0
+        object ButtonPlaySentence: TButton
+          Left = 8
+          Height = 30
+          Top = 32
+          Width = 160
+          Caption = 'Скажите предложение'
+          OnClick = ButtonPlaySentenceClick
+          TabOrder = 0
+        end
+        object ButtonPlayNextSentence: TButton
+          Left = 176
+          Height = 30
+          Top = 32
+          Width = 160
+          Caption = 'Следующее предложение'
+          OnClick = ButtonPlayNextSentenceClick
+          TabOrder = 1
+        end
+        object ButtonStopPlaying: TButton
+          Left = 344
+          Height = 30
+          Top = 32
+          Width = 112
+          Caption = 'Хватит'
+          OnClick = ButtonStopPlayingClick
+          TabOrder = 2
+        end
+        object CheckBoxRepeat: TCheckBox
+          Left = 8
+          Height = 20
+          Top = 8
+          Width = 78
+          AutoSize = False
+          Caption = 'Повторите'
+          TabOrder = 3
+        end
+        object LabelRepeat: TLabel
+          Left = 176
+          Height = 15
+          Top = 13
+          Width = 64
+          Caption = 'LabelRepeat'
+          ParentColor = False
+        end
+        object LabelWarning: TLabel
+          Left = 8
+          Height = 25
+          Top = 64
+          Width = 200
+          Caption = 'No sentences available'
+          Font.CharSet = ANSI_CHARSET
+          Font.Color = clRed
+          Font.Height = -19
+          Font.Name = 'Segoe UI'
+          Font.Pitch = fpVariable
+          Font.Quality = fqDraft
+          Font.Style = [fsBold]
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+      end
+    end
+  end
+  object Splitter1: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 5
+    Top = 506
+    Width = 1112
+    Align = alBottom
+    ResizeAnchor = akBottom
+  end
+  object Panel2: TPanel
+    Left = 0
+    Height = 156
+    Top = 511
+    Width = 1112
+    Align = alBottom
+    BevelOuter = bvNone
+    Caption = 'Panel2'
+    ClientHeight = 156
+    ClientWidth = 1112
+    TabOrder = 3
+    OnResize = Panel2Resize
+    object MemoSentence: TMemo
+      Left = 0
+      Height = 90
+      Top = 66
+      Width = 1112
+      Align = alBottom
+      Color = clNavy
+      Font.Color = clCream
+      Font.Height = -32
+      ParentFont = False
+      ReadOnly = True
+      TabOrder = 0
+    end
+    object Panel3: TPanel
+      Left = 0
+      Height = 66
+      Top = 0
+      Width = 1112
+      Align = alClient
+      BevelOuter = bvNone
+      Caption = 'Panel3'
+      ClientHeight = 66
+      ClientWidth = 1112
+      Color = 11796479
+      ParentColor = False
+      TabOrder = 1
+      object Panel4: TPanel
+        Left = 0
+        Height = 66
+        Top = 0
+        Width = 40
+        Align = alLeft
+        BevelOuter = bvNone
+        ClientHeight = 66
+        ClientWidth = 40
+        Color = 11796479
+        ParentColor = False
+        TabOrder = 0
+        object LabelLength: TLabel
+          Left = 0
+          Height = 15
+          Top = 51
+          Width = 40
+          Align = alBottom
+          Caption = 'LabelLength'
+          ParentColor = False
+        end
+        object LabelDistance: TLabel
+          Left = 0
+          Height = 15
+          Top = 0
+          Width = 40
+          Align = alTop
+          Caption = 'LabelDistance'
+          ParentColor = False
+        end
+      end
+      object MemoTranslation: TMemo
+        Left = 40
+        Height = 66
+        Top = 0
+        Width = 1072
+        Align = alClient
+        Color = clNavy
+        Font.Color = clCream
+        Font.Height = -21
+        ParentFont = False
+        ReadOnly = True
+        TabOrder = 1
+      end
+    end
+  end
+  object TimerRepeat: TTimer
+    Enabled = False
+    OnTimer = TimerRepeatTimer
+    Left = 104
+    Top = 424
+  end
+end

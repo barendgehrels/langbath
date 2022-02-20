@@ -1,0 +1,252 @@
+object FrameSearchWords: TFrameSearchWords
+  Left = 0
+  Height = 651
+  Top = 0
+  Width = 1062
+  ClientHeight = 651
+  ClientWidth = 1062
+  TabOrder = 0
+  DesignLeft = 728
+  DesignTop = 224
+  object LeftPanel: TPanel
+    Left = 0
+    Height = 651
+    Top = 0
+    Width = 496
+    Align = alLeft
+    BevelOuter = bvNone
+    ClientHeight = 651
+    ClientWidth = 496
+    TabOrder = 0
+    object PaintBox: TPaintBox
+      Left = 0
+      Height = 419
+      Top = 232
+      Width = 496
+      Align = alClient
+      Color = 11796479
+      ParentColor = False
+      OnPaint = PaintBoxPaint
+    end
+    object SearchPanel: TPanel
+      Left = 0
+      Height = 232
+      Top = 0
+      Width = 496
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 232
+      ClientWidth = 496
+      Color = 11796479
+      ParentColor = False
+      TabOrder = 0
+      object Edit1: TEdit
+        Left = 16
+        Height = 23
+        Top = 16
+        Width = 240
+        OnEnter = Edit1Enter
+        TabOrder = 0
+        Text = 'Edit1'
+      end
+      object Label1: TLabel
+        Left = 16
+        Height = 15
+        Top = 56
+        Width = 72
+        Caption = 'Permanent ID'
+        ParentColor = False
+      end
+      object Label2: TLabel
+        Left = 16
+        Height = 15
+        Top = 84
+        Width = 50
+        Caption = 'Source ID'
+        ParentColor = False
+      end
+      object Label4: TLabel
+        Left = 16
+        Height = 15
+        Top = 112
+        Width = 26
+        Caption = 'Rank'
+        ParentColor = False
+      end
+      object Label5: TLabel
+        Left = 16
+        Height = 15
+        Top = 139
+        Width = 43
+        Caption = 'Word ID'
+        ParentColor = False
+      end
+      object ButtonSearch: TSpeedButton
+        Left = 272
+        Height = 24
+        Top = 15
+        Width = 24
+        Glyph.Data = {
+          76060000424D7606000000000000360000002800000014000000140000000100
+          2000000000004006000064000000640000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          00000000000000000000000000000000000000000000000000000000000C0000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          000000000008000000B5000000F20000000B0000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          000000000000000000000000000000000008000000B7000000FF000000B50000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000001D0000004F0000004E0000002100000000000000080000
+          00B7000000FF000000B700000008000000000000000000000000000000000000
+          000000000000000000000000000000000018000000AF000000FE000000EF0000
+          00EB000000FF000000B5000000BB000000FF000000B700000008000000000000
+          0000000000000000000000000000000000000000000000000000000000150000
+          00DD000000C80000003800000000000000000000002B000000B7000000FF0000
+          00BB000000080000000000000000000000000000000000000000000000000000
+          00000000000000000000000000A1000000CE0000000900000000000000000000
+          00000000000000000002000000B7000000B60000000000000000000000000000
+          000000000000000000000000000000000000000000000000000D000000F90000
+          00490000000000000000000000000000000000000000000000000000002B0000
+          00FF000000220000000000000000000000000000000000000000000000000000
+          00000000000000000035000000FF0000000B0000000000000000000000000000
+          0000000000000000000000000000000000EB0000004E00000000000000000000
+          0000000000000000000000000000000000000000000000000032000000FF0000
+          000F000000000000000000000000000000000000000000000000000000000000
+          00EF000000500000000000000000000000000000000000000000000000000000
+          00000000000000000009000000F4000000590000000000000000000000000000
+          0000000000000000000000000038000000FE0000001D00000000000000000000
+          0000000000000000000000000000000000000000000000000000000000910000
+          00E6000000160000000000000000000000000000000000000009000000C80000
+          00AF000000000000000000000000000000000000000000000000000000000000
+          000000000000000000000000000C000000CB000000E6000000590000000F0000
+          000B00000049000000CE000000DD000000180000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          000C00000091000000F5000000FF000000FF000000F9000000A1000000150000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000009000000310000
+          00350000000D0000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000
+        }
+        OnClick = SpeedButtonClick
+      end
+      object EditPermanentId: TEdit
+        Left = 96
+        Height = 23
+        Top = 48
+        Width = 160
+        Color = clBtnFace
+        ReadOnly = True
+        TabOrder = 1
+        Text = 'EditPermanentId'
+      end
+      object EditSourceId: TEdit
+        Left = 96
+        Height = 23
+        Top = 76
+        Width = 160
+        Color = clBtnFace
+        ReadOnly = True
+        TabOrder = 2
+        Text = 'EditSourceId'
+      end
+      object EditRank: TEdit
+        Left = 96
+        Height = 23
+        Top = 104
+        Width = 160
+        Color = clBtnFace
+        ReadOnly = True
+        TabOrder = 3
+        Text = 'EditRank'
+      end
+      object EditWordId: TEdit
+        Left = 96
+        Height = 23
+        Top = 132
+        Width = 160
+        Color = clBtnFace
+        ReadOnly = True
+        TabOrder = 4
+        Text = 'EditWordId'
+      end
+      object LabelWordType: TLabel
+        Left = 16
+        Height = 15
+        Top = 168
+        Width = 55
+        Caption = 'Word type'
+        ParentColor = False
+      end
+      object EditWordType: TEdit
+        Left = 96
+        Height = 23
+        Top = 161
+        Width = 160
+        Color = clBtnFace
+        ReadOnly = True
+        TabOrder = 5
+        Text = 'EditWordType'
+      end
+      object LabelWordType1: TLabel
+        Left = 16
+        Height = 15
+        Top = 196
+        Width = 38
+        Caption = 'Gender'
+        ParentColor = False
+      end
+      object EditGender: TEdit
+        Left = 96
+        Height = 23
+        Top = 189
+        Width = 160
+        Color = clBtnFace
+        ReadOnly = True
+        TabOrder = 6
+        Text = 'EditGender'
+      end
+    end
+  end
+  object ImagePanel: TPanel
+    Left = 501
+    Height = 651
+    Top = 0
+    Width = 561
+    Align = alClient
+    BevelOuter = bvNone
+    BorderWidth = 10
+    Caption = '(Dynamically filled with two db image frames)'
+    Color = 11796479
+    ParentColor = False
+    TabOrder = 1
+    OnResize = ImagePanelResize
+  end
+  object Splitter1: TSplitter
+    Left = 496
+    Height = 651
+    Top = 0
+    Width = 5
+    Color = 8976349
+    ParentColor = False
+  end
+  object TimerToRaiseEvent: TTimer
+    Enabled = False
+    Interval = 100
+    OnTimer = TimerToRaiseEventTimer
+    Left = 424
+    Top = 24
+  end
+end

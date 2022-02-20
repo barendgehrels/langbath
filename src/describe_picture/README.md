@@ -28,12 +28,12 @@ The contents is, for example:
 ```
 [describe_picture]
 unsplash_api_url=https://api.unsplash.com/photos/random
-unsplash_api_key=mykey-retrieve-it-yourself
+unsplash_api_key=your key here
 deepl_api_url=https://api-free.deepl.com/v2/translate
-deepl_api_key=mykey-retrieve-it-yourself
+deepl_api_key=your key here
 target_language=RU
 via_languages=PL,CS
-check_language=ES
+check_language=NL
 ```
 
 Language codes can be found here:

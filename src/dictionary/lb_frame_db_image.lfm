@@ -1,0 +1,29 @@
+object FrameDbImage: TFrameDbImage
+  Left = 0
+  Height = 402
+  Top = 0
+  Width = 590
+  ClientHeight = 402
+  ClientWidth = 590
+  TabOrder = 0
+  DesignLeft = 477
+  DesignTop = 131
+  object DBImage: TDBImage
+    Left = 0
+    Height = 352
+    Top = 0
+    Width = 590
+    Align = alClient
+    Proportional = True
+    Stretch = True
+  end
+  object BottomPanel: TPanel
+    Left = 0
+    Height = 50
+    Top = 352
+    Width = 590
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 0
+  end
+end
