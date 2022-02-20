@@ -33,7 +33,8 @@ function ImportCsvFile(cn: TSQLConnection;
 
 implementation
 
-uses LazUtf8, lb_lib, lb_sql_dml_insert;
+uses LazUtf8, LazLogger,
+  lb_lib, lb_sql_dml_insert, lb_lib_string;
 
 function ColumnList(const columnNames : array of string; const ColumnTypes : array of TColumnType) : string;
 var i : integer;
@@ -67,7 +68,7 @@ var txt : TextFile;
   s, sql, indexname : string;
   ar : array of string;
   columnNames : array of string;
-  i, n : integer;
+  i, n, termCount : integer;
   inserter : TSqlInserter;
 begin
   result := false;
@@ -96,15 +97,31 @@ begin
         for i := low(ar) to high(ar) do columnNames[i] := ar[i];
         inserter.Prepare(tablename, columnNames);
       end
-      else if length(ar) <> length(columnNames) then
-      begin
-        log(format('%s: inconsistent line: %d', [CsvFileName, n]));
-      end
       else
       begin
-        //SqlInsert(cn, tablename, CreateColumns(columnNames, ar));
-        inserter.Bind(ar);
-        inserter.Execute;
+        if length(ar) <> length(columnNames) then
+        begin
+          // Try splitting considering (double) quotes
+          termCount := length(ar);
+          DebugLn(format('%s: try to repair', [CsvFileName, n]));
+          ar := RepairAndSplitString(s, separator, '"');
+          if length(ar) = length(columnNames) then
+          begin
+            DebugLn(format('%s: inconsistent line REPAIRED: %d (%d terms i/o %d)',
+              [CsvFileName, n, termCount, length(columnNames)]));
+          end;
+        end;
+
+        if length(ar) = length(columnNames) then
+        begin
+          inserter.Bind(ar);
+          inserter.Execute;
+        end
+        else
+        begin
+          DebugLn(format('%s: inconsistent line: %d (%d terms i/o %d) %s',
+            [CsvFileName, n, length(ar), length(columnNames), ArrayAsString(ar)]));
+        end;
       end;
     end;
 
@@ -126,6 +143,8 @@ begin
       end;
     end;
   end;
+
+  //DebugLn(' done ' + inttostr(n));
 
   result := true;
 end;
@@ -173,7 +192,7 @@ begin
 
       if length(ar) <> length(columnNames) then
       begin
-        log(format('%s: inconsistent line: %d', [CsvFileName, n]));
+        DebugLn(format('%s: inconsistent line: %d', [CsvFileName, n]));
       end
       else
       begin

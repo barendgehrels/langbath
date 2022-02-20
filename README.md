@@ -8,7 +8,7 @@ The suite contains of several programs, with or without User Interface (UI). It'
 Some of the units in folder **common** are also usable outside this context. They will
 be listed below.
 
-So there are the next programs:
+The suite contains the next programs:
 
 ## split_sentences
 This is a **command line** tool. It splits a text file (usually exported from a PDF) into sentences.
@@ -188,6 +188,17 @@ the red parts show errors or issues in the entered text.
 Russian poems and I first use [this](https://ranka.mobi/poem/index.html) tool, it works perfectly.
 That tool learns you the poem line by line, and uses the first letters of each word.
 As a follow-up phase, to get more details, the **memorize_text** tool works quite convenient for me.)*
+
+## import_brown
+This is a **command line** tool. It reads a text file containing the Brown word list,
+and stores the list in the database. It should store it in a database where OpenRusian is also stored
+(to be described later).
+
+## export_brown
+This is a **command line** tool. It reads the imported Brown word list from the database,
+combines it with the OpenRussian words and word forms and writes a text file, with
+all the Brown words, by rank, followed by the words not found in the Brown list.
+This text file can be used for the **analyze_text** tool.
 
 ## common units
 Units useful on its own are:
