@@ -90,6 +90,13 @@ begin
   RecreateTable(cn, 'sentences', 'sentence_id',
     [TableField('bare_sentence', ColumnString),
     TableField('sentence', ColumnString),
+
+    // TODO: rename (this field was omitted earlier. But it is necessary as soon as
+    // the database is used for multiple languages.
+    // However, currently some queries do not support if it is called "language_id".
+    // Therefore it has a temporary name).
+    TableField('temp_language_id', ColumnInteger),
+
     TableField('permanent_id', ColumnInteger), // preserved when importing
     TableField('source_type_id', ColumnInteger),
     TableField('source_id', ColumnInteger), // tatoeba/open russian id
@@ -115,6 +122,7 @@ begin
     TableField('time_begin', ColumnFloat),
     TableField('time_end', ColumnFloat)]);
 
+  RecreateIndex(cn, 'sentences', 'temp_language_id');
   RecreateIndex(cn, 'sentences', 'source_type_id');
   RecreateIndex(cn, 'sentences', 'permanent_id');
   RecreateIndex(cn, 'sentences', 'rating');

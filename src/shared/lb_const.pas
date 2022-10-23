@@ -116,6 +116,11 @@ const
   LanguageIdPortuguese : byte = 13;
   LanguageIdRussian : byte = 16;
   LanguageIdDutch : byte = 18;
+  LanguageIdCzech : byte = 25;
+  LanguageIdSlovenian : byte = 28;
+  LanguageIdCatalan : byte = 44;
+  LanguageIdSwahili : byte = 84;
+  LanguageIdUkrainian : byte = 93;
 
   LanguageIdLatin : byte = 200; // not in that list
 

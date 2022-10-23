@@ -94,9 +94,9 @@ begin
       writeln('Folder does not exist: ', opts.folder);
       error := true;
     end;
-    if not FileExists(opts.folder + '\sentences.csv') then
+    if not FileExists(opts.folder + DirectorySeparator + 'sentences.csv') then
     begin
-      writeln('File does not exist: ', opts.folder + '\sentences.csv');
+      writeln('File does not exist: ', opts.folder + DirectorySeparator + 'sentences.csv');
       error := true;
     end;
     path := ExtractFilePath(opts.db);
