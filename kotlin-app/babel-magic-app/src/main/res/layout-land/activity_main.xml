@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:weightSum="100"
+    tools:context=".MainActivity">
+
+    <RelativeLayout
+        android:id="@+id/imagePanel"
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_weight="65">
+
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minWidth="300dp"
+            app:srcCompat="@drawable/towers_city_via_unsplash"
+            tools:srcCompat="@drawable/towers_city_via_unsplash" />
+
+        <ImageButton
+            android:id="@+id/getImageButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:background="#00FFFFFF"
+            android:foreground="@android:drawable/ic_menu_rotate" />
+
+        <ImageButton
+            android:id="@+id/testButton"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="30dp"
+            android:background="#00FFFFFF"
+            android:foreground="@android:drawable/ic_menu_sort_alphabetically"
+            android:visibility="invisible" />
+
+        <TextView
+            android:id="@+id/linkTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:text=""
+            android:textColor="#03A9F4"
+            android:textIsSelectable="false"
+            android:textSize="12sp" />
+
+        <EditText
+            android:id="@+id/editTextSubject"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginLeft="10dp"
+            android:layout_marginBottom="10dp"
+            android:background="#80FFFFC0"
+            android:backgroundTint="#FFFFC0"
+            android:ems="10"
+            android:hint="Subject"
+            android:inputType="textShortMessage" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:layout_weight="35"
+        android:orientation="vertical"
+        android:weightSum="100">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:progress="50"
+            android:visibility="invisible" />
+
+        <EditText
+            android:id="@+id/editTextTextMultiLine"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="35"
+            android:ems="10"
+            android:hint="Describe the picture"
+            android:inputType="textMultiLine"
+            android:textSize="20dp"
+            android:tooltipText="Describe the picture" />
+
+        <LinearLayout
+            android:id="@+id/buttonPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:weightSum="10">
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2" />
+
+            <Button
+                android:id="@+id/buttonLangTool"
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="6"
+                android:text="verify" />
+
+            <Space
+                android:layout_width="1dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2" />
+
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="45">
+
+            <TextView
+                android:id="@+id/correctionTextView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#FFFFC0"
+                android:scrollbars="vertical"
+                android:textSize="20dp" />
+
+            <ImageButton
+                android:id="@+id/mediaPlayButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginRight="10dp"
+                android:layout_marginBottom="10dp"
+                android:background="#00FFFFFF"
+                android:foreground="@android:drawable/ic_media_play" />
+
+            <ImageButton
+                android:id="@+id/mediaPauseButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginRight="10dp"
+                android:layout_marginBottom="10dp"
+                android:background="#00FFFFFF"
+                android:foreground="@android:drawable/ic_media_pause" />
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/debugTextView"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_weight="20"
+            android:scrollbars="vertical"
+            android:textSize="12dp" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
