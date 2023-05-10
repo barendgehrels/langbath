@@ -1,0 +1,41 @@
+@startuml
+
+skinparam shadowing true
+
+package app [
+  Babel Magic
+  Android (Kotlin)
+]
+cloud mycloud as "azure: babel-magic function app (C#)" #cyan;line:blue;line.bold {
+  node Initialize
+  node RandomImage
+  node DetectLanguage
+  node TranslateVia
+  node TextToSpeech
+  storage storage [
+(api) keys
+authentication
+]
+}
+cloud unsplash as "Unsplash\nImage\nService" #lightgray;line.bold
+cloud deepl as "DeepL\nTranslation\nService" #lightgray;line.bold
+cloud translate #cyan;line:blue;line.bold [
+azure: microsoft
+translate
+]
+cloud tts #cyan;line:blue;line.bold [
+azure: microsoft
+text to speech
+]
+app -[#black,thickness=2]---> Initialize
+app -[#black,thickness=2]---> RandomImage
+app -[#black,thickness=2]---> DetectLanguage
+app -[#black,thickness=2]---> TranslateVia
+app -[#black,thickness=2]---> TextToSpeech
+RandomImage -[#black,thickness=2]-> unsplash
+DetectLanguage -[#black,thickness=2]-> translate
+TextToSpeech -[#black,thickness=2]-> tts
+TranslateVia -[#black,thickness=2]-> deepl
+TranslateVia -[#black,thickness=2]-> deepl
+TranslateVia -[#black,thickness=2]-> deepl
+@enduml

@@ -221,6 +221,7 @@ class MainActivity : AppCompatActivity()
             { cd, lc, corr, quiteRight ->
                 if (!quiteRight && index + 1 < detection.via.size)
                 {
+                    // Using: a Kotlin one shot timer
                     // Schedule next language after a second.
                     // This takes care of quick reponse, and does not block UI
                     // or report it as "busy" with the option to wait.

@@ -54,7 +54,8 @@ fun bareString(s : EnrichedString) : String
 
 private fun subStringOf(s : String?, len : Int = 30) : String
 {
-    return when {
+    return when
+    {
         s == null -> ""
         s.length > len -> s.substring(0, len)
         else -> s
@@ -63,7 +64,9 @@ private fun subStringOf(s : String?, len : Int = 30) : String
 
 fun exceptionMessage(e : Exception, context : String) : String
 {
-    if (e is FileNotFoundException && e.message != null && e.message!!.startsWith("http") && e.message!!.contains("//"))
+    if (e is FileNotFoundException && e.message != null
+        && e.message!!.startsWith("http")
+        && e.message!!.contains("//"))
     {
         val c = if (context.isNotEmpty()) " for $context" else ""
         return "Service not found${c}"
