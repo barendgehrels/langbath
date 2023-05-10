@@ -1,0 +1,52 @@
+@startuml
+user->app:Start
+app->azure:Initialize
+azure->app:json (keys,latency,userid)
+
+user->app:Press Button
+app->azure:RandomImage
+azure->unsplash:get image
+unsplash->azure:image info (json)
+azure->app:json (image info + thumbnail)
+app->app:Display Thumbnail
+app->unsplash:get full image
+unsplash->app:full image
+app->app:Display Image
+
+user->user:Enter text in Portuguese
+user->app:Press Button
+app->azure:DetectLanguage
+azure->"MS-translate":Translate (language auto)
+"MS-translate"->azure:language info
+azure->app:json(language, confidence)
+app->app:Show detection information\n(here: portuguese)
+app->azure:TranslateVia
+
+azure->deepl:translate (pt -> es)
+deepl->azure:translated text (es)
+azure->deepl:translate back (es -> pt)
+deepl->azure:translation (pt)
+
+azure->app:json (translation, other info)
+app->app:Compare text with twice translated text
+app->app:Show possible errors in text
+
+user->user:See corrected text
+
+note right
+also call TranslateVia for a second language
+also translate (once) to native language
+end note
+
+app->app:Handle second translation as well\nand put most similar to original text on top
+
+app->azure:text to speech
+azure->"MS-tts":text to speech
+"MS-tts"->azure:tts response
+azure->app:json (containing sound in base64)
+app->app:decode sound and save temp mp3
+app->app:play mp3
+
+user->user:Listen to correct text
+
+@enduml
