@@ -1,3 +1,14 @@
+// Language Bath
+// Copyright (c) 2022 Barend Gehrels, Amsterdam, the Netherlands.
+// Use, modification and distribution is subject to the MIT License
+// https://raw.githubusercontent.com/barendgehrels/langbath/main/LICENSE
+
+// Reads a frequency list, and related functions.
+// Expected format:
+// - no header
+// - two entries per line, FREQUENCY and WORD
+// - can be separated by TAB, space or comma
+
 unit lb_frequency_list;
 
 {$mode objfpc}{$H+}
@@ -152,6 +163,10 @@ begin
       if length(ar) = 1 then
       begin
         ar := SplitString(list[i], ' ');
+      end;
+      if length(ar) = 1 then
+      begin
+        ar := SplitString(list[i], ',');
       end;
       if length(ar) = 2 then
       begin

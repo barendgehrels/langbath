@@ -14,11 +14,11 @@ interface
 uses
   Classes, SysUtils;
 
-procedure SplitSentences(const inputFilename, outputFilename : string);
+procedure SplitSentences(const inputFilename, outputFilename, honorificsFilename : string; analyze: boolean);
 
 implementation
 
-uses LazUtf8, lb_split_string_into_sentences;
+uses LazUtf8, lb_split_string_into_sentences, lb_lib;
 
 // Returns true if the sentence is a roman numeral
 function IsRomanNumeral(const s : string) : boolean;
@@ -156,15 +156,46 @@ begin
   end;
 end;
 
+function ReadHonorifics(const honorificsFilename : string) : THonorificArray;
+var list : TStringList;
+  ar : array of string;
+  i, count : integer;
+begin
+  result := [];
+  list := TStringList.Create;
+  try
+    list.LoadFromFile(honorificsFilename);
+    for i := 0 to list.Count - 1 do
+    begin
+      ar := SplitString(list[i], #9);
+      if length(ar) = 1 then ar := SplitString(list[i], ',');
+      if length(ar) >= 2 then
+      begin
+        // Also read the count, if specified, though it is currently not used at all
+        count := 1;
+        if length(ar) >= 3 then TryStrToInt(ar[2], count);
 
-procedure SplitSentences(const inputFilename, outputFilename : string);
+        AddToMap(result, ar[0], ar[1], count);
+      end;
+    end;
+
+  finally
+    list.free;
+  end;
+end;
+
+procedure SplitSentences(const inputFilename, outputFilename, honorificsFilename : string; analyze: boolean);
 var inputList, outputList : TStringList;
+  honorifics : THonorificArray;
   allText : string;
+  i : integer;
 begin
   if not FileExists(inputFilename) or FileExists(outputFilename) then
   begin
     exit;
   end;
+
+  honorifics := [];
 
   inputList := TStringList.Create;
   try
@@ -174,7 +205,24 @@ begin
     inputList.Free;
   end;
 
-  outputList := SplitStringIntoSentences(allText);
+  if analyze then
+  begin
+    honorifics := GetHonorifics(allText);
+    outputList := TStringList.Create;
+    for i := low(honorifics) to high(honorifics) do
+    begin
+      outputList.Append(honorifics[i].honorific + ',' + honorifics[i].name + ',' + inttostr(honorifics[i].count));
+    end;
+    outputList.SaveToFile(outputFilename);
+    exit;
+  end;
+
+  if honorificsFilename <> '' then
+  begin
+    honorifics := ReadHonorifics(honorificsFilename);
+  end;
+
+  outputList := SplitStringIntoSentences(allText, honorifics);
   try
     // Postprocess the split sentences: try to split long strings at semicolons
     SplitLongSentences(outputList, 60, 25);

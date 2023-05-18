@@ -118,6 +118,7 @@ begin
   debugList := TStringList.Create;
   {$endif}
 
+  maxRank := 0;
   sumrank := 0;
   countrank := 0;
 
@@ -137,25 +138,20 @@ begin
     AppendList(freqList, f2);
   end;
 
-  SortByEntryAndRank(freqList);
-
-  if length(freqList) = 0 then
+  if length(freqList) > 0 then
   begin
-    exit;
+    SortByEntryAndRank(freqList);
+    maxrank := freqList[length(freqList)-1].rank;
+    //for i := 0 to 1000 do
+    //begin
+    //  debugList.Add(format('FIRST entries : %d, %d, "%s"', [i, freqList[i].rank, freqList[i].entry]));
+    //end;
   end;
-
-  maxrank := freqList[length(freqList)-1].rank;
 
   readabilityMeasurements := TReadabilityMeasurements.Create();
   frequencyCounter1 := TFrequencyCounter.Create(10, 500, 10000);
   frequencyCounter2 := TFrequencyCounter.Create([2500, 5000, 7500, 10000]);
   stringCounter := TStringCounter.Create;
-
-
-  //for i := 0 to 1000 do
-  //begin
-  //  debugList.Add(format('FIRST entries : %d, %d, "%s"', [i, freqList[i].rank, freqList[i].entry]));
-  //end;
 
   totalWordCount := 0;
   totalSentenceCount := 0;
@@ -291,16 +287,19 @@ begin
       writeln(base);
       writeln('Number of sentences     : ' + IntToStr(totalSentenceCount));
       writeln(format('Words per sentence (avg): %.2f', [totalWordCount / totalSentenceCount]));
-      if countrank > 0 then
-        writeln(format('Average rank            : %.2f', [sumrank / countrank]));
-      writeln(format('Words found             : %d %%', [round(100 * countrank / totalWordCount)]));
       writeln(format('Text readability index  : %.2f', [readabilityMeasurements.TextReadabilityIndex]));
       writeln(format('Aut. readability index  : %.2f', [readabilityMeasurements.AutomatedReadabilityIndex]));
       writeln(format('Coleman Liau index      : %.2f', [readabilityMeasurements.ColemanLiauIndex]));
       writeln(format('LIX (läsbarhetsindex)   : %.2f', [readabilityMeasurements.LIX]));
 
-      frequencyCounter1.ReportFrom(70, 10);
-      frequencyCounter2.ReportAll;
+      if countrank > 0 then
+      begin
+        writeln(format('Words found             : %d %%', [round(100 * countrank / totalWordCount)]));
+        writeln(format('Average rank            : %.2f', [sumrank / countrank]));
+        frequencyCounter1.ReportFrom(70, 10);
+        frequencyCounter2.ReportAll;
+      end;
+
       writeln;
     end;
 

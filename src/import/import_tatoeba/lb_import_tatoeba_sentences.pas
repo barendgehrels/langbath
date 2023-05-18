@@ -312,7 +312,7 @@ begin
     ta.Commit;
   end;
 
-  maxLevel := 2;
+  maxLevel := 1;
 
   // TODO: specify the languages in the command line arguments
   writeln('Russian');
@@ -325,6 +325,8 @@ begin
   //InsertIntoLangBathSentenceTables(cn, LanguageIdGerman, maxLevel);
   writeln('Catalan');
   InsertIntoLangBathSentenceTables(cn, LanguageIdCatalan, maxLevel);
+  writeln('Portuguese');
+  InsertIntoLangBathSentenceTables(cn, LanguageIdPortuguese, maxLevel);
   writeln('Dutch');
   InsertIntoLangBathSentenceTables(cn, LanguageIdDutch, maxLevel);
 

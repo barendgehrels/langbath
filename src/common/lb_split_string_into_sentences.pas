@@ -40,14 +40,78 @@ interface
 uses
   Classes, SysUtils;
 
-function SplitStringIntoSentences(const sentenceCollection : string) : TStringList;
+type
+  THonorificEntry = record
+    honorific : string;
+    name : string;
+    count : integer;
+  end;
+
+  THonorificArray = array of THonorificEntry;
+
+function GetHonorifics(const sentenceCollection : string) : THonorificArray;
+function SplitStringIntoSentences(const sentenceCollection : string; const map : THonorificArray) : TStringList;
+procedure AddToMap(var a : THonorificArray; const f : string; const s : string; count : integer = 1);
 
 implementation
 
-uses LazUtf8;
+uses LazUtf8, lb_quicksort;
 
 type
-  TCodePointClassification = (CPCUpper, CPCLower, CPCNumber, CPCSpace, CPCHash, CPCOther);
+  TCodePointClassification = (CPCUnknown, CPCUpper, CPCLower, CPCNumber, CPCSpace, CPCHash, CPCOther);
+
+  TCompareByCountDesc = class
+    function Less(const a, b : THonorificEntry) : boolean;
+  end;
+
+function TCompareByCountDesc.Less(const a, b : THonorificEntry) : boolean;
+begin
+  if a.count = b.count then result := a.honorific < b.honorific else result := a.count > b.count;
+end;
+
+procedure AddToMap(var a : THonorificArray; const f : string; const s : string; count : integer = 1);
+var n : integer;
+begin
+  n := length(a);
+  SetLength(a, n + 1);
+  a[n].honorific := f;
+  a[n].name := s;
+  a[n].count := count;
+end;
+
+function CombiIndex(const a : THonorificArray; const f : string; const s : string) : integer;
+var i : integer;
+begin
+  result := -1;
+  for i := low(a) to high(a) do
+  begin
+    if (a[i].honorific = f) and (a[i].name = s) then
+    begin
+      result := i;
+      exit;
+    end;
+  end;
+end;
+
+procedure AddOrSet(var map : THonorificArray; const f : string; const s : string; count : integer = 1);
+var ci : integer;
+begin
+  ci := CombiIndex(map, f, s);
+  if ci >= 0 then
+  begin
+    inc(map[ci].count, count);
+  end
+  else
+  begin
+    AddToMap(map, f, s, count);
+  end;
+end;
+
+function HasCombi(const a : THonorificArray; const f : string; const s : string) : boolean;
+begin
+  result := CombiIndex(a, f, s) >= 0;
+end;
+
 
 // Classifies a code point (of one UTF character) as uppercase, lowercase, number or other
 function Classify(const codePoint : string) : TCodePointClassification;
@@ -114,6 +178,8 @@ begin
     or (codePoint = ']') // in notes
     or (codePoint = '>') // in notes
     or (codePoint = ';')
+    //or (codePoint = '“')
+    //or (codePoint = '”')
     or (not (Classify(codePoint) in [CPCSpace, CPCOther])) then
     begin
      start := UTF8Copy(s, 1, i);
@@ -132,25 +198,139 @@ begin
   end;
 end;
 
-function SplitStringIntoSentences(const sentenceCollection : string) : TStringList;
+function PeekNextWord(currentPosition, endPosition : PChar) : string;
+var
+  codePointSize: Integer;
+  codePoint: String;
+  code : TCodePointClassification;
+  isEnd : boolean;
+begin
+  result := '';
+  codePoint := '';
+  isEnd := false;
+  repeat
+    codePointSize := UTF8CodepointSize(currentPosition);
+    SetLength(codePoint, codePointSize);
+    Move(currentPosition^, codePoint[1], codePointSize);
+    inc(currentPosition, codePointSize);
+    code := Classify(codePoint);
+    isEnd := not (code in [CPCUpper, CPCLower]);
+    if not isEnd then result := result + codePoint;
+  until (currentPosition >= endPosition) or isEnd;
+end;
+
+// https://en.wikipedia.org/wiki/Honorific
+function GetHonorifics(const sentenceCollection : string) : THonorificArray;
+var
+  currentPosition, endPosition: PChar;
+  codePointSize: Integer;
+  code : TCodePointClassification;
+  codePoint: String;
+
+  theLastWord, theNextWord : string;
+  lastWord : string;
+  possibleSplit : boolean;
+  i, ci : integer;
+  possibleHonorifics : THonorificArray;
+  map : THonorificArray;
+
+begin
+  map := [];
+  result := [];
+  possibleHonorifics := [];
+  lastWord := '';
+  possibleSplit := false;
+  codePoint := '';
+  currentPosition := PChar(sentenceCollection);
+  endPosition := currentPosition + length(sentenceCollection);
+  while currentPosition < endPosition do
+  begin
+    codePointSize := UTF8CodepointSize(currentPosition);
+    SetLength(codePoint, codePointSize);
+    Move(currentPosition^, codePoint[1], codePointSize);
+
+    code := Classify(codePoint);
+
+    if possibleSplit then
+    begin
+      theLastWord := LowerCase(lastWord);
+      if (theLastWord <> '') and (length(theLastWord) <= 4) then
+      begin
+         theNextWord := PeekNextWord(currentPosition + codePointSize, endPosition);
+         if length(theNextWord) >= 2 then
+         begin
+           AddOrSet(map, theLastWord, theNextWord);
+         end;
+      end;
+    end;
+
+    if code = CPCSpace then
+    begin
+      lastWord := '';
+    end
+    else
+    begin
+      if code in [CPCUpper, CPCLower] then lastWord := lastWord + codePoint;
+      possibleSplit := IsPossibleSplit(codePoint);
+    end;
+
+    inc(currentPosition, codePointSize);
+  end;
+
+  // Aggregate the found entries
+  for i := low(map) to high(map) do
+  begin
+    if map[i].count >= 2 then
+    begin
+      AddOrSet(possibleHonorifics, map[i].honorific, '*', map[i].count);
+    end;
+  end;
+
+  // Sort them descending
+  specialize CallQuickSort<THonorificEntry, TCompareByCountDesc>(possibleHonorifics);
+  specialize CallQuickSort<THonorificEntry, TCompareByCountDesc>(map);
+
+  for i := low(possibleHonorifics) to high(possibleHonorifics) do
+  begin
+    if possibleHonorifics[i].count >= 2 then
+    begin
+      //writeln(possibleHonorifics[i].honorific, ',*,', possibleHonorifics[i].count);
+      AddOrSet(result, possibleHonorifics[i].honorific, possibleHonorifics[i].name, possibleHonorifics[i].count);
+    end;
+  end;
+  for i := low(map) to high(map) do
+  begin
+    if map[i].count >= 2 then
+    begin
+      //writeln(map[i].honorific, ',', map[i].name, ',', map[i].count);
+      AddOrSet(result, map[i].honorific, map[i].name, map[i].count);
+    end;
+  end;
+end;
+
+
+function SplitStringIntoSentences(const sentenceCollection : string; const map : THonorificArray) : TStringList;
+const debug = false;
 var
   currentPosition, endPosition: PChar;
   index, codePointSize: Integer;
   previousCode, code : TCodePointClassification;
   codePoint: String;
 
-  next, sentence, outputString : string;
-  isHashed, isPossibleTitle, isPossibleEndOfSentence : boolean;
-  indexOfPossibleTitle, indexOfLowercase : integer;
+  lastWord, next, sentence, outputString : string;
+  theLastWord, theNextWord : string;
+  isHashed, isPossibleEndOfSentence : boolean;
+
 
 begin
+
+  if debug then writeln('split ', sentenceCollection);
+
   previousCode := CPCOther;
   outputString := '';
+  lastWord := '';
   isPossibleEndOfSentence := false;
-  isPossibleTitle := false;
   isHashed := false;
-  indexOfPossibleTitle := 0;
-  indexOfLowercase := 0;
 
   result := TStringList.Create;
 
@@ -167,25 +347,11 @@ begin
 
     code := Classify(codePoint);
 
-    if code = CPCLower then
-    begin
-      indexOfLowercase := index;
-    end;
-
     if ((code = CPCUpper) or (code = CPCHash))
     and (previousCode = CPCSpace)
-    and (index - indexOfLowercase < 4)
     then
     begin
       isHashed := code = CPCHash;
-      isPossibleTitle := true;
-      indexOfPossibleTitle := index;
-    end
-    else if isPossibleTitle and ((code = CPCSpace) or (index - indexOfPossibleTitle > 4)) then
-    begin
-      // At a space it's not a title anymore. Also if it's too long ago, to avoid
-      // placenames being recognized as titles.
-      isPossibleTitle := false;
     end;
 
     if isPossibleEndOfSentence then
@@ -193,6 +359,7 @@ begin
       if code in [CPCUpper, CPCHash] then
       begin
         // New sentence detected. Append the current one and start again
+        if debug then writeln('sentence: ', outputString);
         previousCode := CPCOther;
         sentence := '';
         next := '';
@@ -209,14 +376,34 @@ begin
 
     outputString := outputString + codePoint;
 
+    if isPossibleEndOfSentence then
+    begin
+      theLastWord := LowerCase(lastWord);
+      theNextWord := PeekNextWord(currentPosition + codePointSize, endPosition);
+      if debug then writeln('Combi word: "', theLastWord, '" "', theNextWord, '" ', length(map));
+      if HasCombi(map, theLastWord, theNextWord) then
+      begin
+        if debug then writeln('last word: "', lastWord, '" "', PeekNextWord(currentPosition + codePointSize, endPosition), '" ', isPossibleEndOfSentence);
+        isPossibleEndOfSentence := false;
+      end;
+    end;
+
+    if code = CPCSpace then
+    begin
+      if debug then writeln('Verify word: "', lastWord, '" "', PeekNextWord(currentPosition + codePointSize, endPosition), '" ', isPossibleEndOfSentence);
+      lastWord := '';
+    end
+    else
+    begin
+      if not IsPossibleSPlit(codePoint) then lastWord := lastWord + codePoint;
+    end;
+
     // At a full stop (.) or other chars (?, !):
     // If previous character wasn't a capital (to avoid A.B.C etc),
     // and if next character is a space,
     // and next-next (or further) character is a capital,
     // then the sentence is considered as complete.
-    if ((previousCode <> CPCUpper) or (index - indexOfLowercase > 4))
-    and not isPossibleTitle
-    and IsPossibleSplit(codePoint) then
+    if (previousCode <> CPCUpper) and IsPossibleSplit(codePoint) then
     begin
       isPossibleEndOfSentence := true;
     end;
@@ -227,6 +414,14 @@ begin
 
   // Add the last string, if any
   AppendCleanOutput(result, outputString);
+  if false and debug then
+  begin
+    writeln('Last: ', outputString);
+    for index := 0 to result.Count - 1 do
+    begin
+      writeln('Result: "', result[index], '"');
+    end;
+  end;
 end;
 
 end.
