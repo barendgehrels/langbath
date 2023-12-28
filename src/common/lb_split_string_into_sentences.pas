@@ -50,6 +50,7 @@ type
   THonorificArray = array of THonorificEntry;
 
 function GetHonorifics(const sentenceCollection : string) : THonorificArray;
+function SplitStringIntoSentences(const sentenceCollection : string) : TStringList;
 function SplitStringIntoSentences(const sentenceCollection : string; const map : THonorificArray) : TStringList;
 procedure AddToMap(var a : THonorificArray; const f : string; const s : string; count : integer = 1);
 
@@ -117,23 +118,19 @@ end;
 function Classify(const codePoint : string) : TCodePointClassification;
 var lower, upper : string;
 begin
-  result := CPCOther;
+  result := CPCUnknown;
 
   // Spaces are most common in calling this function, return immediately
-  if codePoint = ' ' then
-  begin
-    result := CPCSpace;
-    exit;
-  end;
-  if codePoint = '#' then
-  begin
-    result := CPCHash;
-    exit;
-  end;
-
+  if codePoint = ' ' then result := CPCSpace;
+  if codePoint = '#' then result := CPCHash;
+  //if (codePoint = '–') or (codePoint = '“') then result := CPCStart;
   if (length(codePoint) = 1) and (codePoint[1] >= '0') and (codePoint[1] <= '9') then
   begin
     result := CPCNumber;
+  end;
+
+  if result <> CPCUnknown then
+  begin
     exit;
   end;
 
@@ -156,8 +153,10 @@ begin
   result := (CodePoint = '.') or (CodePoint = '?') or (CodePoint = '!');
 end;
 
-procedure ExtractStartOfSentence(const s : string;
-   var start, finish : string);
+// TODO: this is deprecated and not used anymore.
+// It's partly replaced by the new PeekHasCapital and IsPossibleStart
+// VERIFY if existing splits are all fine without.
+procedure ExtractStartOfSentence(const s : string; var start, finish : string);
 var
   i, len : integer;
   codePoint : string;
@@ -189,7 +188,28 @@ begin
   end;
 end;
 
-procedure AppendCleanOutput(list : TStringList; s : string);
+function IsPossibleStart(const codePoint : string) : boolean;
+begin
+  result := (codePoint = '–')
+    or (codePoint = '—')
+    or (codePoint = '“')
+    or (codePoint = '"')
+    or (codePoint = '«');
+end;
+
+function IsPossibleEnd(const codePoint : string) : boolean;
+begin
+  result := (codePoint = '»')
+    or (codePoint = '”')
+    or (codePoint = ';')
+    or (codePoint = ')')
+    or (codePoint = '}')
+    or (codePoint = ']') // in notes
+    or (codePoint = '>') // in notes
+    ;
+end;
+
+procedure TrimAndAppendIfNotEmpty(list : TStringList; s : string);
 begin
   s := trim(s);
   if length(s) > 0 then
@@ -208,6 +228,7 @@ begin
   result := '';
   codePoint := '';
   isEnd := false;
+  // TODO: make while
   repeat
     codePointSize := UTF8CodepointSize(currentPosition);
     SetLength(codePoint, codePointSize);
@@ -218,6 +239,32 @@ begin
     if not isEnd then result := result + codePoint;
   until (currentPosition >= endPosition) or isEnd;
 end;
+
+function PeekForCapital(currentPosition, endPosition : PChar) : boolean;
+var
+  codePointSize: Integer;
+  codePoint: String;
+  code : TCodePointClassification;
+  count : integer;
+begin
+  count := 0;
+  result := false;
+  codePoint := '';
+  while (currentPosition < endPosition) and (count < 6) do
+  begin
+    codePointSize := UTF8CodepointSize(currentPosition);
+    SetLength(codePoint, codePointSize);
+    Move(currentPosition^, codePoint[1], codePointSize);
+    code := Classify(codePoint);
+    if code = CPCUpper then
+    begin
+      result := true;
+    end;
+    inc(currentPosition, codePointSize);
+    inc(count);
+  end;
+end;
+
 
 // https://en.wikipedia.org/wiki/Honorific
 function GetHonorifics(const sentenceCollection : string) : THonorificArray;
@@ -290,6 +337,7 @@ begin
   specialize CallQuickSort<THonorificEntry, TCompareByCountDesc>(possibleHonorifics);
   specialize CallQuickSort<THonorificEntry, TCompareByCountDesc>(map);
 
+  // Add to result (currently: with selection count >= 2)
   for i := low(possibleHonorifics) to high(possibleHonorifics) do
   begin
     if possibleHonorifics[i].count >= 2 then
@@ -313,14 +361,13 @@ function SplitStringIntoSentences(const sentenceCollection : string; const map :
 const debug = false;
 var
   currentPosition, endPosition: PChar;
-  index, codePointSize: Integer;
+  index, dotCount, letterCount, codePointSize: Integer;
   previousCode, code : TCodePointClassification;
   codePoint: String;
 
-  lastWord, next, sentence, outputString : string;
+  lastWord, outputString : string;
   theLastWord, theNextWord : string;
-  isHashed, isPossibleEndOfSentence : boolean;
-
+  isHashed, isPossibleEndOfSentence, isEnd : boolean;
 
 begin
 
@@ -329,6 +376,9 @@ begin
   previousCode := CPCOther;
   outputString := '';
   lastWord := '';
+  letterCount := 0;
+  dotCount := 0;
+  isEnd := false;
   isPossibleEndOfSentence := false;
   isHashed := false;
 
@@ -347,8 +397,7 @@ begin
 
     code := Classify(codePoint);
 
-    if ((code = CPCUpper) or (code = CPCHash))
-    and (previousCode = CPCSpace)
+    if (code = CPCHash) and (previousCode = CPCSpace)
     then
     begin
       isHashed := code = CPCHash;
@@ -356,16 +405,22 @@ begin
 
     if isPossibleEndOfSentence then
     begin
-      if code in [CPCUpper, CPCHash] then
+      isEnd := code in [CPCUpper, CPCHash];
+      if IsPossibleStart(codePoint) then
       begin
-        // New sentence detected. Append the current one and start again
+        // Walk ahead to check if the new sentence starts with a capital.
+        // If not, unregister this possible-end-of-sentence
+        isEnd := PeekForCapital(currentPosition, endPosition);
+        isPossibleEndOfSentence := isEnd;
+      end;
+      if isEnd then
+      begin
+        // New sentence detected. Append the current sentence and start again
         if debug then writeln('sentence: ', outputString);
         previousCode := CPCOther;
-        sentence := '';
-        next := '';
-        ExtractStartOfSentence(outputString, sentence, next);
-        AppendCleanOutput(result, sentence);
-        outputString := next;
+        // DEPRECATED ExtractStartOfSentence(outputString, sentence, next);
+        TrimAndAppendIfNotEmpty(result, outputString);
+        outputString := '';
         isPossibleEndOfSentence := false;
       end
       else if (code in [CPCLower, CPCNumber]) and not isHashed then
@@ -392,10 +447,15 @@ begin
     begin
       if debug then writeln('Verify word: "', lastWord, '" "', PeekNextWord(currentPosition + codePointSize, endPosition), '" ', isPossibleEndOfSentence);
       lastWord := '';
+      letterCount := 0;
     end
     else
     begin
-      if not IsPossibleSPlit(codePoint) then lastWord := lastWord + codePoint;
+      if not IsPossibleSPlit(codePoint) then
+      begin
+        lastWord := lastWord + codePoint;
+        inc(letterCount);
+      end;
     end;
 
     // At a full stop (.) or other chars (?, !):
@@ -408,12 +468,27 @@ begin
       isPossibleEndOfSentence := true;
     end;
 
+
+    if codePoint = '.' then
+    begin
+      inc(dotCount);
+      if (dotCount > 1) then
+      begin
+        //isPossibleEndOfSentence := false;
+      end;
+      if debug then writeln('DOT word: "', lastWord, '" "', PeekNextWord(currentPosition + codePointSize, endPosition), '" ', isPossibleEndOfSentence, ' -> ', dotCount);
+    end
+    else
+    begin
+      dotCount := 0;
+    end;
+
     previousCode := code;
     inc(currentPosition, codePointSize);
   end;
 
   // Add the last string, if any
-  AppendCleanOutput(result, outputString);
+  TrimAndAppendIfNotEmpty(result, outputString);
   if false and debug then
   begin
     writeln('Last: ', outputString);
@@ -422,6 +497,13 @@ begin
       writeln('Result: "', result[index], '"');
     end;
   end;
+end;
+
+function SplitStringIntoSentences(const sentenceCollection : string) : TStringList;
+var a : THonorificArray;
+begin
+  a := [];
+  result := SplitStringIntoSentences(sentenceCollection, a);
 end;
 
 end.

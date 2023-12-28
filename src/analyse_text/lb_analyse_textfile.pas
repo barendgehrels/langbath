@@ -86,6 +86,7 @@ end;
 procedure AnalyzeTextfile(const inputFilename, frequencyFilename,
   nameFilename, commonFilename: string);
 const wordsPerPage = 250;
+  autoSplit : boolean = false; // TODO: pass this - if true, also pass honorifics
 var
   list, splitted, bag: TStringList;
   i, j: integer;
@@ -163,8 +164,19 @@ begin
 
   try
     list.LoadFromFile(inputFileName);
-    s := CleanText(list.Text);
-    splitted := SplitStringIntoSentences(s);
+    if autoSplit then
+    begin
+      s := CleanText(list.Text);
+      splitted := SplitStringIntoSentences(s);
+    end
+    else
+    begin
+      splitted := TStringList.Create;
+      for i := 0 to list.Count - 1 do
+      begin
+        splitted.append(list[i]);
+      end;
+    end;
   finally
     list.Free;
   end;
